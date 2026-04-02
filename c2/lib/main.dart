@@ -1,4 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:velocity_x/velocity_x.dart';
+import 'package:c2/app_colors.dart';
+import 'package:c2/cash_flow_line_chart.dart';
+import 'package:c2/expenses_pie_chart.dart';
+import 'package:c2/transaction_cell.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,47 +19,42 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple, brightness: .light),
+        /* light theme settings */
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      darkTheme: ThemeData(
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple, brightness: .dark),
+        /* dark theme settings */
+      ),
+      themeMode: ThemeMode.system,
+      home: const TabbedContent(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class TabbedContent extends StatefulWidget {
+  const TabbedContent({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TabbedContent> createState() => _TabbedContentState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _TabbedContentState extends State<TabbedContent>
+    with SingleTickerProviderStateMixin {
+  late TabController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   int _counter = 0;
 
   void _incrementCounter() {
@@ -64,58 +65,200 @@ class _MyHomePageState extends State<MyHomePage> {
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
       _counter++;
+      print("Counter is now $_counter");
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+        title: HStack(
+          spacing: 10.0,
+          [
+            Text('Shark Budget', style: DefaultTextStyle.of(context).style.apply(color: AppColors.contentColorBlue, decoration: .none, fontSizeFactor: 0.5)),
+            FittedBox(
+              fit: BoxFit.contain, // otherwise the logo will be tiny
+              child: Image.asset('images/shark_budget.jpg', width: 50, height: 50),
+            )
+          ]
+        ),
+        bottom: TabBar(
+          controller: _controller,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          tabs: const [
+            Tab(text: 'Dashboard'),
+            Tab(text: 'Details'),
+            Tab(text: 'Charts'),
+            Tab(text: 'Settings'),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      body: TabBarView(
+        controller: _controller,
+        children: [
+          // Dashboard
+          ListView(
+            padding: const EdgeInsets.all(8),
+            children: <Widget>[
+              FloatingActionButton(
+                onPressed: _incrementCounter,
+                tooltip: 'Add Transaction',
+                child: const Icon(Icons.add),
+              ),
+              Container(
+                height: 200,
+                color: AppColors.contentColorPurple,
+                child: ExpensesPieChart(),
+              ),
+              Container(
+                height: 200,
+                color: AppColors.contentColorYellow,
+                child: CashFlowLineChart(),
+              ),
+              Container(
+                height: 200,
+                color: AppColors.contentColorBlue,
+                child: HStack(
+                  spacing: 20,
+                  [
+                    VStack(
+                      [
+                        Text('Total Income'),
+                        Text('\$0.00', style: DefaultTextStyle.of(context).style.apply(color: Colors.black54, decorationStyle: .dashed, fontSizeFactor: 0.5)),
+                        Text('+8% vs last period', style: DefaultTextStyle.of(context).style.apply(color: AppColors.contentColorGreen, decoration: .none, fontSizeFactor: 0.3)),
+                      ],
+                      crossAlignment: CrossAxisAlignment.start,
+                      axisSize: MainAxisSize.min,
+                    ),
+                    VStack(
+                      [
+                        Text('Total Expenses'),
+                        Text('\$1515.80', style: DefaultTextStyle.of(context).style.apply(color: Colors.black54, decorationStyle: .dashed, fontSizeFactor: 0.5)),
+                        Text('+3% vs last period', style: DefaultTextStyle.of(context).style.apply(color: AppColors.contentColorGreen, decoration: .none, fontSizeFactor: 0.3)),
+                      ],
+                      crossAlignment: CrossAxisAlignment.start,
+                      axisSize: MainAxisSize.min,
+                    ),
+                    VStack(
+                      [
+                        Text('Net Balance'),
+                        Text('-\$1515.80', style: DefaultTextStyle.of(context).style.apply(color: Colors.black54, decorationStyle: .dashed, fontSizeFactor: 0.5)),
+                        Text('Income – Expense', style: DefaultTextStyle.of(context).style.apply(color: Colors.black26, decoration: .none, fontSizeFactor: 0.3)),
+                      ],
+                      crossAlignment: CrossAxisAlignment.start,
+                      axisSize: MainAxisSize.min,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Details
+          VStack(
+            [
+              FloatingActionButton(
+                onPressed: _incrementCounter,
+                tooltip: 'Add Transaction',
+                child: const Icon(Icons.add),
+              ),
+              TransactionCell(
+                index: 0,
+                transaction: Transaction(
+                    "Date",
+                    "Type",
+                    "Category",
+                    "Source/Merchant",
+                    "Note",
+                    "Amount"
+                ),
+                editable: false,
+              ),
+              TransactionCell(
+                index: 1,
+                transaction: Transaction(
+                  "2 March 2026",
+                  "Expense",
+                  "Housing",
+                  "Rent Payment",
+                  "Monthly rent",
+                  "\$1200.00"
+                ),
+              ),
+              TransactionCell(
+                index: 2,
+                transaction: Transaction(
+                    "3 March 2026",
+                    "Expense",
+                    "Food",
+                    "Walmart",
+                    "–",
+                    "\$85.50"
+                ),
+              ),
+              TransactionCell(
+                index: 3,
+                transaction: Transaction(
+                    "3 March 2026",
+                    "Expense",
+                    "Transport",
+                    "Gas Station",
+                    "–",
+                    "\$45.00"
+                ),
+              ),
+            ]
+          ),
+
+          // Charts
+          CashFlowLineChart(),
+
+          // Settings
+          Center(
+            child: VStack(
+              spacing: 20.0,
+              [
+                Icon(
+                  Icons.settings,
+                  color: Colors.deepPurple,
+                  size: 30.0,
+                ),
+                Text('Settings and configuration options.')
+              ]
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContentTab extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _ContentTab({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 64, color: Theme.of(context).primaryColor),
+            const SizedBox(height: 16),
+            Text(
+              text,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
