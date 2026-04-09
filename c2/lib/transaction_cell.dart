@@ -15,7 +15,7 @@ class Transaction {
 }
 
 class TransactionCell extends StatelessWidget {
-  TransactionCell({
+  const TransactionCell({
     super.key,
     this.index = 0,
     this.transaction = Transaction.empty,
