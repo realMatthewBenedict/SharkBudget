@@ -17,6 +17,26 @@ class _CashFlowLineChartState extends State<CashFlowLineChart> {
 
   bool showAvg = false;
 
+  List<FlSpot> mainDataArray = const [
+  FlSpot(0, 3000),
+  FlSpot(2.6, -2000),
+  FlSpot(4.9, 5000),
+  FlSpot(6.8, 3100),
+  FlSpot(8, 4000),
+  FlSpot(9.5, 3000),
+  FlSpot(11, 4000),
+  ];
+
+  List<FlSpot> avgDataArray = const [
+    FlSpot(0, 1440),
+    FlSpot(2.6, 1440),
+    FlSpot(4.9, 1440),
+    FlSpot(6.8, 1440),
+    FlSpot(8, 1440),
+    FlSpot(9.5, 1440),
+    FlSpot(11, 1440),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -147,15 +167,7 @@ class _CashFlowLineChartState extends State<CashFlowLineChart> {
       maxY: 6000,
       lineBarsData: [
         LineChartBarData(
-          spots: const [
-            FlSpot(0, 3000),
-            FlSpot(2.6, -2000),
-            FlSpot(4.9, 5000),
-            FlSpot(6.8, 3100),
-            FlSpot(8, 4000),
-            FlSpot(9.5, 3000),
-            FlSpot(11, 4000),
-          ],
+          spots: mainDataArray,
           isCurved: true,
           gradient: LinearGradient(
             colors: gradientColors,
@@ -234,15 +246,7 @@ class _CashFlowLineChartState extends State<CashFlowLineChart> {
       maxY: 6000,
       lineBarsData: [
         LineChartBarData(
-          spots: const [
-            FlSpot(0, 1440),
-            FlSpot(2.6, 1440),
-            FlSpot(4.9, 1440),
-            FlSpot(6.8, 1440),
-            FlSpot(8, 1440),
-            FlSpot(9.5, 1440),
-            FlSpot(11, 1440),
-          ],
+          spots: avgDataArray,
           isCurved: true,
           gradient: LinearGradient(
             colors: [

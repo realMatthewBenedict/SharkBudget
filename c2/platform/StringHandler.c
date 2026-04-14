@@ -1,6 +1,16 @@
+#include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "string_handler.h"
+#include "StringHandler.h"
+
+char* toLower(char* s) {
+    char* r = strdup(s);
+    for (char *p=r; *p; p++) {
+        *p = tolower(*p);
+    }
+    return r;
+}
 
 char* intToString(int64_t num) {
     char* str = malloc((int)((ceil(log10(num))+1)*sizeof(char)));
@@ -21,7 +31,7 @@ String intArrToString(int64_t num[static 1], int len) {
 }
 
 String mergeArrayStrings(String a, String b) {
-    cstring_string_type(type) str = NULL;
+    String str = NULL;
     cstring_append(str, a, cstring_length(a));
     cstring_push_back(str, ',');
     cstring_append(str, b, cstring_length(b));

@@ -3,8 +3,8 @@
 #include "BackendController.h"
 #include "C2Notification.h"
 #include "C2CashFlowRequestHandler.h"
-#include "string_handler.h"
-#include "timestamps.h"
+#include "StringHandler.h"
+#include "TimeHandler.h"
 
 void process_cash_flow_request() {
     BackendController* b = malloc(sizeof(BackendController));

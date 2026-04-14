@@ -1,1 +1,6 @@
-void process_request(char* kRequestName, char* data);
+typedef struct {
+    char* name;
+    char* data;
+} Message;
+
+void process_request(Message request);

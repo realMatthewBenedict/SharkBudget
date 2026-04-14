@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Platform binaries
+/platform/backend.dll
+/platform/libbackend.so
+/platform/libbackend.dylib

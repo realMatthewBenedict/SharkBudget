@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <time.h>
+#include "TimeHandler.h"
 
 static time_t current_month_start(void) {
     time_t now = time(NULL);
@@ -36,9 +36,11 @@ static void reverse_array(int64_t arr[], size_t n) {
 }
 
 int64_t* construct_timestamps(int num_timestamps) {
-    int64_t* timestamps = malloc(num_timestamps * sizeof(int64_t));
-    timestamps[0] = current_month_start();
-    int j = localtime(&timestamps[0])->tm_mon;
+    time_t now = current_month_start();
+    int64_t* timestamps = malloc(num_timestamps * sizeof(time_t));
+    int j = localtime(&now)->tm_mon;
+
+    timestamps[0] = (int64_t)now;
     for (int i = 1; i < num_timestamps; ++i) {
         timestamps[i] = prev_month_start(j - i);
     }

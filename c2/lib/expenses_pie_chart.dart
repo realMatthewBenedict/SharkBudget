@@ -3,6 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:c2/app_colors.dart';
 import 'package:c2/indicator.dart';
 
+class ExpenseReport {
+  ExpenseReport(this.bills, this.food, this.housing, this.transport, this.other);
+
+  int bills;
+  int food;
+  int housing;
+  int transport;
+  int other;
+}
+
 class ExpensesPieChart extends StatefulWidget {
   const ExpensesPieChart({super.key});
 
