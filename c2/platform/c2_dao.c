@@ -1,19 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sqlite3.h>
-
-#include "cvector.h"
-
-struct Transaction {
-    char* date;
-    char* type;
-    char* category;
-    char* source;
-    char* note;
-    char* amount;
-};
-typedef cvector_vector_type(Transaction*) TransactionVector;
+#include "c2_dao.h"
 
 sqlite3* c2dao_initDB() {
     // Creation
@@ -28,12 +13,12 @@ sqlite3* c2dao_initDB() {
 
     char *sql = "CREATE TABLE IF NOT EXISTS transactions("
                 "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                "date TEXT,"
+                "unix_time INTEGER,"
                 "type TEXT,"
                 "category TEXT,"
                 "source TEXT,"
                 "note TEXT,"
-                "amount TEXT);";
+                "amount_cents INTEGER);";
     char *errMsg = NULL;
 
     retCode = sqlite3_exec(db, sql, NULL, NULL, &errMsg);
@@ -72,27 +57,34 @@ void c2dao_insertDB(sqlite3* db, Transaction* t) {
     sqlite3_finalize(stmt);
 }
 
-TransactionVector c2dao_queryDB(sqlite3* db) {
-    const char *sql = "SELECT * FROM transactions";
-    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+TransactionVector c2dao_queryDB(sqlite3* db, long long unix_start, long long unix_end) {
+    sqlite3_stmt *stmt;
+    const char *sql = "SELECT * FROM transactions "
+                      "WHERE unix_time >= ? AND unix_time < ? "
+                      "ORDER BY unix_time ASC";
+
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         abort();
     }
 
+    sqlite3_bind_int64(stmt, 1, unix_start);
+    sqlite3_bind_int64(stmt, 2, unix_end);
+
     // Results
     TransactionVector results = NULL;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const char *date = (const char*)sqlite3_column_text(stmt, 0);
-        const char *type = (const char*)sqlite3_column_text(stmt, 1);
-        const char *category = (const char*)sqlite3_column_text(stmt, 2);
-        const char *source = (const char*)sqlite3_column_text(stmt, 3);
-        const char *note = (const char*)sqlite3_column_text(stmt, 4);
-        const char *amount = (const char*)sqlite3_column_text(stmt, 5);
-
-        Transaction *t = {.date = date, .type = type, .category = category, .source = source, .note = note, .amount = amount};
-
+        Transaction t = {
+                .id = sqlite3_column_int64(stmt, 0),
+                .unix_time = sqlite3_column_int64(stmt, 1),
+                .type = strdup(sqlite3_column_bytes(stmt, 2)),
+                .category = strdup(sqlite3_column_bytes(stmt, 3)),
+                .source = strdup(sqlite3_column_bytes(stmt, 4)),
+                .note = strdup(sqlite3_column_bytes(stmt, 5)),
+                .amount_cents = sqlite3_column_int64(stmt, 6)
+        };
         cvector_push_back(results, t);
     }
 
@@ -100,19 +92,6 @@ TransactionVector c2dao_queryDB(sqlite3* db) {
     return results;
 }
 
-/*
-// Example usage
-int main(int argc, const char **argv) {
-    // Initialization
-    sqlite3 *db = c2dao_initDB();
-
-    // c2dao_insertDB calls here, etc.
-
-    //Cleanup
-    printf("Closing the database\n");
+void c2dao_closeDB(sqlite3* db) {
     sqlite3_close(db);
-    db = NULL;
-
-    return EXIT_SUCCESS;
 }
- */
