@@ -23,3 +23,5 @@ sqlite3* c2dao_initDB();
 void c2dao_insertDB(sqlite3* db, const Transaction* t);
 
 TransactionVector c2dao_queryDB(sqlite3* db, int64_t unix_start, int64_t unix_end);
+
+void c2dao_closeDB(sqlite3* db);

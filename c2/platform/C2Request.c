@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include "C2Request.h"
 #include "C2CashFlowRequestHandler.h"
@@ -6,6 +7,7 @@
 
 void process_request(Message request) {
     char* kRequestName = request.name;
+    fprintf(stderr, "Processed request: %s\n", kRequestName);
     if (strcmp(kRequestName, "kCashFlowRequest") == 0) {
         process_cash_flow_request();
     }

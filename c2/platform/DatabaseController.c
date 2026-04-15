@@ -80,7 +80,7 @@ TransactionVector c2dao_queryDB(sqlite3 *db, long long unix_start, long long uni
 
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "Prepare failed: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Query prepare failed: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         abort();
     }

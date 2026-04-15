@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
+
 import 'package:c2/app_colors.dart';
 import 'package:c2/cash_flow_line_chart.dart';
+import 'package:c2/c2_request.dart';
 import 'package:c2/expenses_pie_chart.dart';
 import 'package:c2/transaction_cell.dart';
 
@@ -26,19 +28,19 @@ class MyApp extends StatelessWidget {
         /* dark theme settings */
       ),
       themeMode: ThemeMode.system,
-      home: const TabbedContent(),
+      home: const MainContent(),
     );
   }
 }
 
-class TabbedContent extends StatefulWidget {
-  const TabbedContent({super.key});
+class MainContent extends StatefulWidget {
+  const MainContent({super.key});
 
   @override
-  State<TabbedContent> createState() => _TabbedContentState();
+  State<MainContent> createState() => MainContentState();
 }
 
-class _TabbedContentState extends State<TabbedContent>
+class MainContentState extends State<MainContent>
     with SingleTickerProviderStateMixin {
   late TabController _controller;
 
@@ -46,6 +48,10 @@ class _TabbedContentState extends State<TabbedContent>
   void initState() {
     super.initState();
     _controller = TabController(length: 4, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      sendRequest("kCashFlowRequest", "");
+      sendRequest("kExpenseReportRequest", "");
+    });
   }
 
   @override
@@ -213,7 +219,7 @@ class _TabbedContentState extends State<TabbedContent>
           ),
 
           // Charts
-          CashFlowLineChart(),
+          CashFlowLineChart(key: CashFlowLineChart.chartKey),
 
           // Settings
           Center(
@@ -235,6 +241,7 @@ class _TabbedContentState extends State<TabbedContent>
   }
 }
 
+/*
 class _ContentTab extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -262,3 +269,4 @@ class _ContentTab extends StatelessWidget {
     );
   }
 }
+*/

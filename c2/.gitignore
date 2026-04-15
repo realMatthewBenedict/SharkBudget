@@ -45,6 +45,4 @@ app.*.map.json
 /android/app/release
 
 # Platform binaries
-/platform/backend.dll
-/platform/libbackend.so
-/platform/libbackend.dylib
+/macos/Runner/Frameworks/libbackend.dylib

@@ -2,6 +2,17 @@
 #include "StringHandler.h"
 #include "BackendController.h"
 
+BackendController* createBackend() {
+    BackendController* b = malloc(sizeof(BackendController));
+    b->globalDB = c2dao_initDB();
+    return b;
+}
+
+void freeBackend(BackendController* b) {
+    c2dao_closeDB(b->globalDB);
+    b->globalDB = NULL;
+}
+
 static int64_t getNetCashFlow(BackendController* b, int64_t start_timestamp, int64_t end_timestamp) {
     TransactionVector v = c2dao_queryDB(b->globalDB, start_timestamp, end_timestamp);
     int result_cents = 0; // income - expense

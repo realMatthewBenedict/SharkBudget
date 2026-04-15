@@ -12,6 +12,9 @@ typedef struct {
     int64_t other;
 } ExpenseReport;
 
+BackendController* createBackend();
+void freeBackend(BackendController* b);
+
 int64_t* getNetCashFlowArray(BackendController* b, int64_t timestamps[static 2], int num_timestamps);
 int64_t* avgCashFlow(int64_t timestamps[static 2], int64_t cash_flow[static 1], int num_timestamps);
 ExpenseReport* expenseBreakdown(BackendController* b, int64_t start_timestamp, int64_t end_timestamp);

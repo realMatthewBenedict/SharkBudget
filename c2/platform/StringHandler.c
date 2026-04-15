@@ -13,8 +13,10 @@ char* toLower(char* s) {
 }
 
 char* intToString(int64_t num) {
-    char* str = malloc((int)((ceil(log10(num))+1)*sizeof(char)));
+    char* str = malloc(32 * sizeof(char));
+    if (!str) abort();
     sprintf(str, "%lld", num);
+    str = realloc(str, strlen(str) + 1);
     return str;
 }
 

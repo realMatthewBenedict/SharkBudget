@@ -14,6 +14,7 @@ class ExpenseReport {
 }
 
 class ExpensesPieChart extends StatefulWidget {
+  static final GlobalKey<ExpensesPieChartState> chartKey = GlobalKey<ExpensesPieChartState>();
   const ExpensesPieChart({super.key});
 
   @override
@@ -22,6 +23,14 @@ class ExpensesPieChart extends StatefulWidget {
 
 class ExpensesPieChartState extends State {
   int touchedIndex = -1;
+
+  List<double> valueData = [70, 10, 15, 5, 0];
+
+  void updateData(List<double> newValueData) {
+    setState(() {
+      valueData = newValueData;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +76,6 @@ class ExpensesPieChartState extends State {
             children: <Widget>[
               Indicator(
                 color: AppColors.contentColorBlue,
-                text: 'Housing',
-                isSquare: true,
-              ),
-              SizedBox(
-                height: 4,
-              ),
-              Indicator(
-                color: AppColors.contentColorYellow,
                 text: 'Bills',
                 isSquare: true,
               ),
@@ -82,8 +83,16 @@ class ExpensesPieChartState extends State {
                 height: 4,
               ),
               Indicator(
+                color: AppColors.contentColorYellow,
+                text: 'Food',
+                isSquare: true,
+              ),
+              SizedBox(
+                height: 4,
+              ),
+              Indicator(
                 color: AppColors.contentColorGreen,
-                text: 'Transport',
+                text: 'Housing',
                 isSquare: true,
               ),
               SizedBox(
@@ -91,7 +100,15 @@ class ExpensesPieChartState extends State {
               ),
               Indicator(
                 color: AppColors.contentColorRed,
-                text: 'Food',
+                text: 'Transport',
+                isSquare: true,
+              ),
+              SizedBox(
+                height: 4,
+              ),
+              Indicator(
+                color: AppColors.contentColorBlack,
+                text: 'Other',
                 isSquare: true,
               ),
               SizedBox(
@@ -116,8 +133,8 @@ class ExpensesPieChartState extends State {
       return switch (i) {
         0 => PieChartSectionData(
           color: AppColors.contentColorBlue,
-          value: 70,
-          title: '70%',
+          value: valueData[0],
+          title: '${valueData[0]}%',
           radius: radius,
           titleStyle: TextStyle(
             fontSize: fontSize,
@@ -128,8 +145,8 @@ class ExpensesPieChartState extends State {
         ),
         1 => PieChartSectionData(
           color: AppColors.contentColorYellow,
-          value: 10,
-          title: '10%',
+          value: valueData[1],
+          title: '${valueData[1]}%',
           radius: radius,
           titleStyle: TextStyle(
             fontSize: fontSize,
@@ -140,8 +157,8 @@ class ExpensesPieChartState extends State {
         ),
         2 => PieChartSectionData(
           color: AppColors.contentColorGreen,
-          value: 5,
-          title: '5%',
+          value: valueData[2],
+          title: '${valueData[2]}%',
           radius: radius,
           titleStyle: TextStyle(
             fontSize: fontSize,
@@ -152,8 +169,20 @@ class ExpensesPieChartState extends State {
         ),
         3 => PieChartSectionData(
           color: AppColors.contentColorRed,
-          value: 15,
-          title: '15%',
+          value: valueData[3],
+          title: '${valueData[3]}%',
+          radius: radius,
+          titleStyle: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            color: AppColors.mainTextColor1,
+            shadows: shadows,
+          ),
+        ),
+        4 => PieChartSectionData(
+          color: AppColors.contentColorBlack,
+          value: valueData[4],
+          title: '${valueData[4]}%',
           radius: radius,
           titleStyle: TextStyle(
             fontSize: fontSize,

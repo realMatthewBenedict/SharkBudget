@@ -6,7 +6,7 @@
 #include "TimeHandler.h"
 
 void process_expense_report_request() {
-    BackendController* b = malloc(sizeof(BackendController));
+    BackendController* b = createBackend();
     int64_t* timestamps = construct_timestamps(2);
     ExpenseReport* report = expenseBreakdown(b, timestamps[0], timestamps[1]);
 
@@ -19,4 +19,5 @@ void process_expense_report_request() {
     };
     String result = intArrToString(r, 5);
     send_notification("kExpenseReportNotification", result);
+    freeBackend(b);
 }

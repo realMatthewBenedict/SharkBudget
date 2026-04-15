@@ -1,15 +1,18 @@
+import 'dart:io';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:c2/app_colors.dart';
 
 class CashFlowLineChart extends StatefulWidget {
+  static final GlobalKey<CashFlowLineChartState> chartKey = GlobalKey<CashFlowLineChartState>();
   const CashFlowLineChart({super.key});
 
   @override
-  State<CashFlowLineChart> createState() => _CashFlowLineChartState();
+  State<CashFlowLineChart> createState() => CashFlowLineChartState();
 }
 
-class _CashFlowLineChartState extends State<CashFlowLineChart> {
+class CashFlowLineChartState extends State<CashFlowLineChart> {
   List<Color> gradientColors = [
     AppColors.contentColorCyan,
     AppColors.contentColorBlue,
@@ -36,6 +39,33 @@ class _CashFlowLineChartState extends State<CashFlowLineChart> {
     FlSpot(9.5, 1440),
     FlSpot(11, 1440),
   ];
+
+  List<FlSpot> _mapIntListToFlSpots(List<int> data) {
+    return data.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.toDouble());
+    }).toList();
+  }
+
+  List<FlSpot> _mapAvgListToFlSpots(List<int> data, double newAvg) {
+    return data.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), newAvg);
+    }).toList();
+  }
+
+  ({List<FlSpot> main, List<FlSpot> avg}) _prepareData(List<int> newMainData, double newAvgData) {
+    List<FlSpot> newMainDataArray = _mapIntListToFlSpots(newMainData);
+    List<FlSpot> newAvgDataArray = _mapAvgListToFlSpots(newMainData, newAvgData);
+    return (main: newMainDataArray, avg: newAvgDataArray);
+  }
+
+  void updateData(List<int> newMainData, double newAvgData) {
+    var newData = _prepareData(newMainData, newAvgData);
+    setState(() {
+      mainDataArray = newData.main;
+      avgDataArray = newData.avg;
+    });
+    stderr.write("Updated cash flow chart state!");
+  }
 
   @override
   Widget build(BuildContext context) {
