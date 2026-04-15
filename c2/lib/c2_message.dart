@@ -18,10 +18,10 @@ DynamicLibrary getDylib() {
   );
   if (Platform.isMacOS) {
     libraryPath = path.join(
-        path.dirname(Platform.resolvedExecutable),
-        '..',
-        'Frameworks',
-        'libbackend.dylib'
+      path.dirname(Platform.resolvedExecutable),
+      '..',
+      'Frameworks',
+      'libbackend.dylib',
     );
   }
   if (Platform.isWindows) {

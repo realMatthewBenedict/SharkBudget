@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:velocity_x/velocity_x.dart';
 
 import 'package:c2/app_colors.dart';
@@ -20,7 +21,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple, brightness: .light),
+        colorScheme: .fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: .light,
+        ),
         /* light theme settings */
       ),
       darkTheme: ThemeData(
@@ -51,6 +55,7 @@ class MainContentState extends State<MainContent>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       sendRequest("kCashFlowRequest", "");
       sendRequest("kExpenseReportRequest", "");
+      sendRequest("kTransactionListRequest", "");
     });
   }
 
@@ -60,34 +65,171 @@ class MainContentState extends State<MainContent>
     super.dispose();
   }
 
-  int _counter = 0;
+  void addTransaction() {
+    // Controllers for each field (dispose them if reusing)
+    final dateController = TextEditingController();
+    final typeController = TextEditingController();
+    final categoryController = TextEditingController();
+    final sourceController = TextEditingController();
+    final noteController = TextEditingController();
+    final amountController = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-      print("Counter is now $_counter");
-    });
+    DateTime? selectedDate;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            title: const Text('Add Transaction'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Date picker field
+                  InkWell(
+                    onTap: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: dialogContext,
+                        initialDate: selectedDate ?? now,
+                        firstDate: DateTime(now.year - 5),
+                        lastDate: DateTime(now.year + 1),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          selectedDate = picked;
+                          dateController.text = DateFormat(
+                            'd MMMM yyyy',
+                          ).format(picked);
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(
+                        dateController.text.isEmpty
+                            ? 'Pick a date'
+                            : dateController.text,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Type
+                  TextField(
+                    controller: typeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Type (e.g., Expense)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Category
+                  TextField(
+                    controller: categoryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Category (e.g., Food)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Source/Merchant
+                  TextField(
+                    controller: sourceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Source/Merchant',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Note
+                  TextField(
+                    controller: noteController,
+                    decoration: const InputDecoration(
+                      labelText: 'Note',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Amount
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (e.g., 45.00)',
+                      prefixText: '\$',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  final unixSeconds = selectedDate == null
+                      ? ''
+                      : (selectedDate!.millisecondsSinceEpoch ~/ 1000)
+                            .toString();
+                  final dollars = double.parse(amountController.text);
+                  final cents = (dollars * 100).toStringAsFixed(0);
+                  sendRequest(
+                    "kNewTransactionRequest",
+                    "$unixSeconds,${typeController.text},"
+                        "${categoryController.text},${sourceController.text},"
+                        "${noteController.text},$cents",
+                  );
+                  // Close dialog
+                  Navigator.pop(context);
+                  // Clean up
+                  dateController.dispose();
+                  typeController.dispose();
+                  categoryController.dispose();
+                  sourceController.dispose();
+                  noteController.dispose();
+                  amountController.dispose();
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: HStack(
-          spacing: 10.0,
-          [
-            Text('Shark Budget', style: DefaultTextStyle.of(context).style.apply(color: AppColors.contentColorBlue, decoration: .none, fontSizeFactor: 0.5)),
-            FittedBox(
-              fit: BoxFit.contain, // otherwise the logo will be tiny
-              child: Image.asset('images/shark_budget.jpg', width: 50, height: 50),
-            )
-          ]
-        ),
+        title: HStack(spacing: 10.0, [
+          Text(
+            'Shark Budget',
+            style: DefaultTextStyle.of(context).style.apply(
+              color: AppColors.contentColorBlue,
+              decoration: .none,
+              fontSizeFactor: 0.5,
+            ),
+          ),
+          FittedBox(
+            fit: BoxFit.contain, // otherwise the logo will be tiny
+            child: Image.asset(
+              'images/shark_budget.jpg',
+              width: 50,
+              height: 50,
+            ),
+          ),
+        ]),
         bottom: TabBar(
           controller: _controller,
           isScrollable: true,
@@ -109,7 +251,7 @@ class MainContentState extends State<MainContent>
             padding: const EdgeInsets.all(8),
             children: <Widget>[
               FloatingActionButton(
-                onPressed: _incrementCounter,
+                onPressed: addTransaction,
                 tooltip: 'Add Transaction',
                 child: const Icon(Icons.add),
               ),
@@ -126,147 +268,116 @@ class MainContentState extends State<MainContent>
               Container(
                 height: 200,
                 color: AppColors.contentColorBlue,
-                child: HStack(
-                  spacing: 20,
-                  [
-                    VStack(
-                      [
-                        Text('Total Income'),
-                        Text('\$0.00', style: DefaultTextStyle.of(context).style.apply(color: Colors.black54, decorationStyle: .dashed, fontSizeFactor: 0.5)),
-                        Text('+8% vs last period', style: DefaultTextStyle.of(context).style.apply(color: AppColors.contentColorGreen, decoration: .none, fontSizeFactor: 0.3)),
-                      ],
-                      crossAlignment: CrossAxisAlignment.start,
-                      axisSize: MainAxisSize.min,
-                    ),
-                    VStack(
-                      [
-                        Text('Total Expenses'),
-                        Text('\$1515.80', style: DefaultTextStyle.of(context).style.apply(color: Colors.black54, decorationStyle: .dashed, fontSizeFactor: 0.5)),
-                        Text('+3% vs last period', style: DefaultTextStyle.of(context).style.apply(color: AppColors.contentColorGreen, decoration: .none, fontSizeFactor: 0.3)),
-                      ],
-                      crossAlignment: CrossAxisAlignment.start,
-                      axisSize: MainAxisSize.min,
-                    ),
-                    VStack(
-                      [
-                        Text('Net Balance'),
-                        Text('-\$1515.80', style: DefaultTextStyle.of(context).style.apply(color: Colors.black54, decorationStyle: .dashed, fontSizeFactor: 0.5)),
-                        Text('Income – Expense', style: DefaultTextStyle.of(context).style.apply(color: Colors.black26, decoration: .none, fontSizeFactor: 0.3)),
-                      ],
-                      crossAlignment: CrossAxisAlignment.start,
-                      axisSize: MainAxisSize.min,
-                    ),
-                  ],
-                ),
+                child: HStack(spacing: 20, [
+                  VStack(
+                    [
+                      Text('Total Income'),
+                      Text(
+                        '\$0.00',
+                        style: DefaultTextStyle.of(context).style.apply(
+                          color: Colors.black54,
+                          decorationStyle: .dashed,
+                          fontSizeFactor: 0.5,
+                        ),
+                      ),
+                      Text(
+                        '+8% vs last period',
+                        style: DefaultTextStyle.of(context).style.apply(
+                          color: AppColors.contentColorGreen,
+                          decoration: .none,
+                          fontSizeFactor: 0.3,
+                        ),
+                      ),
+                    ],
+                    crossAlignment: CrossAxisAlignment.start,
+                    axisSize: MainAxisSize.min,
+                  ),
+                  VStack(
+                    [
+                      Text('Total Expenses'),
+                      Text(
+                        '\$1515.80',
+                        style: DefaultTextStyle.of(context).style.apply(
+                          color: Colors.black54,
+                          decorationStyle: .dashed,
+                          fontSizeFactor: 0.5,
+                        ),
+                      ),
+                      Text(
+                        '+3% vs last period',
+                        style: DefaultTextStyle.of(context).style.apply(
+                          color: AppColors.contentColorGreen,
+                          decoration: .none,
+                          fontSizeFactor: 0.3,
+                        ),
+                      ),
+                    ],
+                    crossAlignment: CrossAxisAlignment.start,
+                    axisSize: MainAxisSize.min,
+                  ),
+                  VStack(
+                    [
+                      Text('Net Balance'),
+                      Text(
+                        '-\$1515.80',
+                        style: DefaultTextStyle.of(context).style.apply(
+                          color: Colors.black54,
+                          decorationStyle: .dashed,
+                          fontSizeFactor: 0.5,
+                        ),
+                      ),
+                      Text(
+                        'Income – Expense',
+                        style: DefaultTextStyle.of(context).style.apply(
+                          color: Colors.black26,
+                          decoration: .none,
+                          fontSizeFactor: 0.3,
+                        ),
+                      ),
+                    ],
+                    crossAlignment: CrossAxisAlignment.start,
+                    axisSize: MainAxisSize.min,
+                  ),
+                ]),
               ),
             ],
           ),
 
           // Details
-          VStack(
-            [
-              FloatingActionButton(
-                onPressed: _incrementCounter,
-                tooltip: 'Add Transaction',
-                child: const Icon(Icons.add),
-              ),
-              TransactionCell(
-                index: 0,
-                transaction: Transaction(
-                    "Date",
-                    "Type",
-                    "Category",
-                    "Source/Merchant",
-                    "Note",
-                    "Amount"
+          ValueListenableBuilder<List<TransactionString>>(
+            valueListenable: transactionsNotifier,
+            builder: (context, transactions, child) {
+              return VStack([
+                FloatingActionButton(
+                  onPressed: addTransaction,
+                  tooltip: 'Add Transaction',
+                  child: const Icon(Icons.add),
                 ),
-                editable: false,
-              ),
-              TransactionCell(
-                index: 1,
-                transaction: Transaction(
-                  "2 March 2026",
-                  "Expense",
-                  "Housing",
-                  "Rent Payment",
-                  "Monthly rent",
-                  "\$1200.00"
-                ),
-              ),
-              TransactionCell(
-                index: 2,
-                transaction: Transaction(
-                    "3 March 2026",
-                    "Expense",
-                    "Food",
-                    "Walmart",
-                    "–",
-                    "\$85.50"
-                ),
-              ),
-              TransactionCell(
-                index: 3,
-                transaction: Transaction(
-                    "3 March 2026",
-                    "Expense",
-                    "Transport",
-                    "Gas Station",
-                    "–",
-                    "\$45.00"
-                ),
-              ),
-            ]
+                ...transactions.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final transaction = entry.value;
+                  return TransactionCell(
+                    index: index,
+                    transaction: transaction,
+                    editable: index == 0 ? false : true, // Header non-editable
+                  );
+                }),
+              ]);
+            },
           ),
 
           // Charts
-          CashFlowLineChart(key: CashFlowLineChart.chartKey),
+          CashFlowLineChart(),
 
           // Settings
           Center(
-            child: VStack(
-              spacing: 20.0,
-              [
-                Icon(
-                  Icons.settings,
-                  color: Colors.deepPurple,
-                  size: 30.0,
-                ),
-                Text('Settings and configuration options.')
-              ]
-            ),
+            child: VStack(spacing: 20.0, [
+              Icon(Icons.settings, color: Colors.deepPurple, size: 30.0),
+              Text('Settings and configuration options.'),
+            ]),
           ),
         ],
       ),
     );
   }
 }
-
-/*
-class _ContentTab extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _ContentTab({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 64, color: Theme.of(context).primaryColor),
-            const SizedBox(height: 16),
-            Text(
-              text,
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-*/

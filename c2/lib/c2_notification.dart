@@ -1,20 +1,48 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
-import 'package:ffi/ffi.dart';
 
 import 'package:c2/cash_flow_line_chart.dart';
 import 'package:c2/c2_message.dart';
 import 'package:c2/expenses_pie_chart.dart';
+import 'package:c2/transaction_cell.dart';
 
 List<int> stringToIntArray(String s) {
   return s.split(',').map((e) => int.parse(e.trim())).toList();
 }
 
+List<Transaction> parseTransactions(String s) {
+  final data = s.split(',');
+
+  // Each transaction has 7 fields, starting at indices 0, 7, ...
+  final transactions = <Transaction>[];
+
+  for (int i = 0; i < data.length; i += 7) {
+    if (i + 6 >= data.length) {
+      break; // Not enough fields for complete transaction
+    }
+
+    final transaction = Transaction(
+      int.parse(data[i]), // id
+      int.parse(data[i + 1]), // unix timestamp
+      data[i + 2], // type
+      data[i + 3], // category
+      data[i + 4], // source/merchant
+      data[i + 5], // note
+      int.parse(data[i + 6]), // amount in cents
+    );
+
+    transactions.add(transaction);
+  }
+
+  return transactions;
+}
+
 // Native function signature
 typedef ProcessNotificationNative = Void Function(Message);
 typedef ProcessNotification = void Function(Message);
-typedef NotificationCallbackPointer = Pointer<NativeFunction<ProcessNotificationNative>>;
+typedef NotificationCallbackPointer =
+    Pointer<NativeFunction<ProcessNotificationNative>>;
 
 // Global callback holder
 late final SendPort sendPort;
@@ -24,20 +52,25 @@ void processCashFlowNotification(List<int> data) {
   List<int> netCashFlow = data.sublist(0, data.length - 2);
   List<int> avgCashFlowList = data.sublist(data.length - 2);
   double avgCashFlow = avgCashFlowList[0] / avgCashFlowList[1];
-  stderr.write('🔍 chartKey.currentState: ${CashFlowLineChart.chartKey.currentState}');
-  stderr.write('🔍 chartKey.currentContext: ${CashFlowLineChart.chartKey.currentContext}');
 
-  final state = CashFlowLineChart.chartKey.currentState;
-  if (state == null) {
-    stderr.write('❌ Chart state NULL - widget not ready');
-    return;
-  }
-
-  state.updateData(netCashFlow, avgCashFlow);
+  cashFlowNotifier.value = CashFlowChartData(netCashFlow, avgCashFlow);
 }
 
 void processExpenseReportNotification(List<int> data) {
-  ExpenseReport report = ExpenseReport(data[0], data[1], data[2], data[3], data[4]);
+  expensesNotifier.value = ExpenseReport(
+    data[0],
+    data[1],
+    data[2],
+    data[3],
+    data[4],
+  ).toPercentages();
+}
+
+void processTransactionListNotification(List<Transaction> data) {
+  transactionsNotifier.value = [
+    TransactionString.header(),
+    ...data.map((t) => t.toTransString()),
+  ];
 }
 
 void processNotification(String notificationName, String notificationData) {
@@ -45,6 +78,8 @@ void processNotification(String notificationName, String notificationData) {
     processCashFlowNotification(stringToIntArray(notificationData));
   } else if (notificationName == "kExpenseReportNotification") {
     processExpenseReportNotification(stringToIntArray(notificationData));
+  } else if (notificationName == "kTransactionListNotification") {
+    processTransactionListNotification(parseTransactions(notificationData));
   } else {
     stderr.write("Unrecognized notification: $notificationName\n");
     return;
@@ -61,7 +96,9 @@ void initNotificationCallback(DynamicLibrary lib) {
     return;
   }
 
-  final initDartApiDL = lib.lookupFunction<InitDartApiNative, InitDartApiDart>('InitDartApiDL');
+  final initDartApiDL = lib.lookupFunction<InitDartApiNative, InitDartApiDart>(
+    'InitDartApiDL',
+  );
 
   final result = initDartApiDL(NativeApi.initializeApiDLData);
   if (result != 0) {
@@ -74,25 +111,29 @@ void initNotificationCallback(DynamicLibrary lib) {
   sendPort = receivePort.sendPort;
 
   // Register callback with C (pass function pointer + isolate port ID)
-  final registerCallback = lib.lookupFunction<
-      Void Function(Int64),
-      void Function(int)
-  >('register_notification_port');
+  final registerCallback = lib
+      .lookupFunction<Void Function(Int64), void Function(int)>(
+        'register_notification_port',
+      );
 
   registerCallback(sendPort.nativePort);
 
   // Listen for messages from C
-  receivePort.listen((message) {
-    if (message is List && message.length == 2) {
-      final notificationName = message[0] as String;
-      final notificationData = message[1] as String;
-      stderr.writeln('✅ Received message: $notificationName with data: $notificationData');
-
-      processNotification(notificationName, notificationData);
-    } else {
-      stderr.writeln('📨 Unknown message: $message (${message.runtimeType})');
-    }
-  }, onError: (error) {
-    stderr.writeln('❌ ReceivePort error: $error');
-  });
+  receivePort.listen(
+    (message) {
+      if (message is List && message.length == 2) {
+        final notificationName = message[0] as String;
+        final notificationData = message[1] as String;
+        stderr.writeln(
+          "✅ Received message: $notificationName with data: '$notificationData'",
+        );
+        processNotification(notificationName, notificationData);
+      } else {
+        stderr.writeln("📨 Unknown message: $message (${message.runtimeType})");
+      }
+    },
+    onError: (error) {
+      stderr.writeln("❌ Message receipt error: $error");
+    },
+  );
 }

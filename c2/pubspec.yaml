@@ -38,6 +38,7 @@ dependencies:
   fl_chart: ^1.2.0
   velocity_x: ^4.3.1
   path: ^1.9.1
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

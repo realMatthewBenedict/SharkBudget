@@ -12,7 +12,8 @@ void sendRequest(String name, String data) {
   final dylib = getDylib();
   initNotificationCallback(dylib);
 
-  final processRequest = dylib.lookupFunction<ProcessRequestNative, ProcessRequest>('process_request');
+  final processRequest = dylib
+      .lookupFunction<ProcessRequestNative, ProcessRequest>('process_request');
   final kRequestName = name.toNativeUtf8();
   final requestData = data.toNativeUtf8();
 

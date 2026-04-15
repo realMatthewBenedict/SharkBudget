@@ -1,11 +1,36 @@
-import 'dart:io';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:c2/app_colors.dart';
 
+class CashFlowChartData {
+  final List<FlSpot> mainData;
+  final List<FlSpot> avgData;
+
+  //CashFlowChartData({required this.mainData, required this.avgData});
+
+  static List<FlSpot> _processMainData(List<int> netCashFlow) {
+    return netCashFlow.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.toDouble());
+    }).toList();
+  }
+
+  static List<FlSpot> _processAvgData(
+    List<int> netCashFlow,
+    double avgCashFlow,
+  ) {
+    return netCashFlow.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), avgCashFlow);
+    }).toList();
+  }
+
+  CashFlowChartData(List<int> netCashFlow, double avgCashFlow)
+    : mainData = _processMainData(netCashFlow),
+      avgData = _processAvgData(netCashFlow, avgCashFlow);
+}
+
+final ValueNotifier<CashFlowChartData?> cashFlowNotifier = ValueNotifier(null);
+
 class CashFlowLineChart extends StatefulWidget {
-  static final GlobalKey<CashFlowLineChartState> chartKey = GlobalKey<CashFlowLineChartState>();
   const CashFlowLineChart({super.key});
 
   @override
@@ -13,136 +38,60 @@ class CashFlowLineChart extends StatefulWidget {
 }
 
 class CashFlowLineChartState extends State<CashFlowLineChart> {
-  List<Color> gradientColors = [
-    AppColors.contentColorCyan,
-    AppColors.contentColorBlue,
-  ];
-
   bool showAvg = false;
-
-  List<FlSpot> mainDataArray = const [
-  FlSpot(0, 3000),
-  FlSpot(2.6, -2000),
-  FlSpot(4.9, 5000),
-  FlSpot(6.8, 3100),
-  FlSpot(8, 4000),
-  FlSpot(9.5, 3000),
-  FlSpot(11, 4000),
-  ];
-
-  List<FlSpot> avgDataArray = const [
-    FlSpot(0, 1440),
-    FlSpot(2.6, 1440),
-    FlSpot(4.9, 1440),
-    FlSpot(6.8, 1440),
-    FlSpot(8, 1440),
-    FlSpot(9.5, 1440),
-    FlSpot(11, 1440),
-  ];
-
-  List<FlSpot> _mapIntListToFlSpots(List<int> data) {
-    return data.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.toDouble());
-    }).toList();
-  }
-
-  List<FlSpot> _mapAvgListToFlSpots(List<int> data, double newAvg) {
-    return data.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), newAvg);
-    }).toList();
-  }
-
-  ({List<FlSpot> main, List<FlSpot> avg}) _prepareData(List<int> newMainData, double newAvgData) {
-    List<FlSpot> newMainDataArray = _mapIntListToFlSpots(newMainData);
-    List<FlSpot> newAvgDataArray = _mapAvgListToFlSpots(newMainData, newAvgData);
-    return (main: newMainDataArray, avg: newAvgDataArray);
-  }
-
-  void updateData(List<int> newMainData, double newAvgData) {
-    var newData = _prepareData(newMainData, newAvgData);
-    setState(() {
-      mainDataArray = newData.main;
-      avgDataArray = newData.avg;
-    });
-    stderr.write("Updated cash flow chart state!");
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        AspectRatio(
-          aspectRatio: 2,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              right: 18,
-              left: 12,
-              top: 24,
-              bottom: 12,
-            ),
-            child: LineChart(
-              showAvg ? avgData() : mainData(),
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 60,
-          height: 34,
-          child: TextButton(
-            onPressed: () {
-              setState(() {
-                showAvg = !showAvg;
-              });
-            },
-            child: Text(
-              'avg',
-              style: TextStyle(
-                fontSize: 12,
-                color: showAvg
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : Colors.white,
+    return ValueListenableBuilder<CashFlowChartData?>(
+      valueListenable: cashFlowNotifier,
+      builder: (context, data, child) {
+        return Stack(
+          children: <Widget>[
+            AspectRatio(
+              aspectRatio: 2,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  right: 18,
+                  left: 12,
+                  top: 24,
+                  bottom: 12,
+                ),
+                child: data == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : LineChart(
+                        showAvg
+                            ? avgData(data.avgData)
+                            : mainData(data.mainData),
+                      ),
               ),
             ),
-          ),
-        ),
-      ],
+            SizedBox(
+              width: 60,
+              height: 34,
+              child: TextButton(
+                onPressed: () {
+                  setState(() {
+                    showAvg = !showAvg;
+                  });
+                },
+                child: Text(
+                  'avg',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: showAvg
+                        ? Colors.white.withOpacity(0.5)
+                        : Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget bottomTitleWidgets(double value, TitleMeta meta) {
-    const style = TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: 16,
-    );
-    String text = switch (value.toInt()) {
-      2 => 'Jun 2025',
-      5 => 'Sep 2025',
-      8 => 'Dec 2025',
-      11 => 'Mar 2026',
-      _ => '',
-    };
-    return SideTitleWidget(
-      meta: meta,
-      child: Text(text, style: style),
-    );
-  }
-
-  Widget leftTitleWidgets(double value, TitleMeta meta) {
-    const style = TextStyle(
-      fontWeight: FontWeight.bold,
-      fontSize: 15,
-    );
-    String text = switch (value.toInt()) {
-      -3000 => '-3K',
-      0 => '0',
-      3000 => '3K',
-      _ => '',
-    };
-
-    return Text(text, style: style, textAlign: TextAlign.left);
-  }
-
-  LineChartData mainData() {
+  LineChartData mainData(List<FlSpot> spots) {
     return LineChartData(
       gridData: FlGridData(
         show: true,
@@ -167,9 +116,7 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
         rightTitles: const AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
-        topTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
@@ -197,22 +144,24 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
       maxY: 6000,
       lineBarsData: [
         LineChartBarData(
-          spots: mainDataArray,
+          spots: spots,
           isCurved: true,
           gradient: LinearGradient(
-            colors: gradientColors,
+            colors: const [
+              AppColors.contentColorCyan,
+              AppColors.contentColorBlue,
+            ],
           ),
           barWidth: 5,
           isStrokeCapRound: true,
-          dotData: const FlDotData(
-            show: false,
-          ),
+          dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
-              colors: gradientColors
-                  .map((color) => color.withValues(alpha: 0.3))
-                  .toList(),
+              colors: const [
+                AppColors.contentColorCyan,
+                AppColors.contentColorBlue,
+              ].map((color) => color.withOpacity(0.3)).toList(),
             ),
           ),
         ),
@@ -220,7 +169,12 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
     );
   }
 
-  LineChartData avgData() {
+  LineChartData avgData(List<FlSpot> spots) {
+    final gradientColors = const [
+      AppColors.contentColorCyan,
+      AppColors.contentColorBlue,
+    ];
+
     return LineChartData(
       lineTouchData: const LineTouchData(enabled: false),
       gridData: FlGridData(
@@ -229,16 +183,10 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
         verticalInterval: 1,
         horizontalInterval: 1000,
         getDrawingVerticalLine: (value) {
-          return const FlLine(
-            color: Color(0xff37434d),
-            strokeWidth: 1,
-          );
+          return const FlLine(color: Color(0xff37434d), strokeWidth: 1);
         },
         getDrawingHorizontalLine: (value) {
-          return const FlLine(
-            color: Color(0xff37434d),
-            strokeWidth: 1,
-          );
+          return const FlLine(color: Color(0xff37434d), strokeWidth: 1);
         },
       ),
       titlesData: FlTitlesData(
@@ -259,9 +207,7 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
             interval: 1,
           ),
         ),
-        topTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: const AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
@@ -276,36 +222,84 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
       maxY: 6000,
       lineBarsData: [
         LineChartBarData(
-          spots: avgDataArray,
+          spots: spots,
           isCurved: true,
           gradient: LinearGradient(
             colors: [
-              ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                  .lerp(0.2)!,
-              ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                  .lerp(0.2)!,
+              ColorTween(
+                begin: gradientColors[0],
+                end: gradientColors[1],
+              ).lerp(0.2)!,
+              ColorTween(
+                begin: gradientColors[0],
+                end: gradientColors[1],
+              ).lerp(0.2)!,
             ],
           ),
           barWidth: 5,
           isStrokeCapRound: true,
-          dotData: const FlDotData(
-            show: false,
-          ),
+          dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
               colors: [
-                ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                    .lerp(0.2)!
-                    .withValues(alpha: 0.1),
-                ColorTween(begin: gradientColors[0], end: gradientColors[1])
-                    .lerp(0.2)!
-                    .withValues(alpha: 0.1),
+                ColorTween(
+                  begin: gradientColors[0],
+                  end: gradientColors[1],
+                ).lerp(0.2)!.withOpacity(0.1),
+                ColorTween(
+                  begin: gradientColors[0],
+                  end: gradientColors[1],
+                ).lerp(0.2)!.withOpacity(0.1),
               ],
             ),
           ),
         ),
       ],
     );
+  }
+
+  Widget bottomTitleWidgets(double value, TitleMeta meta) {
+    const style = TextStyle(fontWeight: FontWeight.bold, fontSize: 16);
+    String text;
+    switch (value.toInt()) {
+      case 2:
+        text = 'Jun 2025';
+        break;
+      case 5:
+        text = 'Sep 2025';
+        break;
+      case 8:
+        text = 'Dec 2025';
+        break;
+      case 11:
+        text = 'Mar 2026';
+        break;
+      default:
+        text = '';
+    }
+    return SideTitleWidget(
+      meta: meta,
+      child: Text(text, style: style),
+    );
+  }
+
+  Widget leftTitleWidgets(double value, TitleMeta meta) {
+    const style = TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
+    String text;
+    switch (value.toInt()) {
+      case -3000:
+        text = '-3K';
+        break;
+      case 0:
+        text = '0';
+        break;
+      case 3000:
+        text = '3K';
+        break;
+      default:
+        text = '';
+    }
+    return Text(text, style: style, textAlign: TextAlign.left);
   }
 }
