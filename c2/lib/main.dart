@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart' as db;
 import 'package:velocity_x/velocity_x.dart';
 
 import 'package:c2/app_colors.dart';
+import 'package:c2/balance_card.dart';
 import 'package:c2/cash_flow_line_chart.dart';
 import 'package:c2/c2_request.dart';
 import 'package:c2/c2_notification.dart';
@@ -276,6 +277,7 @@ class MainContentState extends State<MainContent>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       sendRequest("kCashFlowRequest", gCurrentUsername);
       sendRequest("kExpenseReportRequest", gCurrentUsername);
+      sendRequest("kBalanceReportRequest", gCurrentUsername);
       sendRequest("kTransactionListRequest", gCurrentUsername);
     });
   }
@@ -486,81 +488,7 @@ class MainContentState extends State<MainContent>
                 color: AppColors.contentColorYellow,
                 child: CashFlowLineChart(),
               ),
-              Container(
-                height: 200,
-                color: AppColors.contentColorBlue,
-                child: HStack(spacing: 20, [
-                  VStack(
-                    [
-                      Text('Total Income'),
-                      Text(
-                        '\$0.00',
-                        style: DefaultTextStyle.of(context).style.apply(
-                          color: Colors.black54,
-                          decorationStyle: .dashed,
-                          fontSizeFactor: 0.5,
-                        ),
-                      ),
-                      Text(
-                        '+8% vs last period',
-                        style: DefaultTextStyle.of(context).style.apply(
-                          color: AppColors.contentColorGreen,
-                          decoration: .none,
-                          fontSizeFactor: 0.3,
-                        ),
-                      ),
-                    ],
-                    crossAlignment: CrossAxisAlignment.start,
-                    axisSize: MainAxisSize.min,
-                  ),
-                  VStack(
-                    [
-                      Text('Total Expenses'),
-                      Text(
-                        '\$1515.80',
-                        style: DefaultTextStyle.of(context).style.apply(
-                          color: Colors.black54,
-                          decorationStyle: .dashed,
-                          fontSizeFactor: 0.5,
-                        ),
-                      ),
-                      Text(
-                        '+3% vs last period',
-                        style: DefaultTextStyle.of(context).style.apply(
-                          color: AppColors.contentColorGreen,
-                          decoration: .none,
-                          fontSizeFactor: 0.3,
-                        ),
-                      ),
-                    ],
-                    crossAlignment: CrossAxisAlignment.start,
-                    axisSize: MainAxisSize.min,
-                  ),
-                  VStack(
-                    [
-                      Text('Net Balance'),
-                      Text(
-                        '-\$1515.80',
-                        style: DefaultTextStyle.of(context).style.apply(
-                          color: Colors.black54,
-                          decorationStyle: .dashed,
-                          fontSizeFactor: 0.5,
-                        ),
-                      ),
-                      Text(
-                        'Income – Expense',
-                        style: DefaultTextStyle.of(context).style.apply(
-                          color: Colors.black26,
-                          decoration: .none,
-                          fontSizeFactor: 0.3,
-                        ),
-                      ),
-                    ],
-                    crossAlignment: CrossAxisAlignment.start,
-                    axisSize: MainAxisSize.min,
-                  ),
-                ]),
-              ),
+              BalanceCard(),
             ],
           ),
 

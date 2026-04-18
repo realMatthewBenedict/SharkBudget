@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 
+import 'package:c2/app_colors.dart';
+import 'package:c2/c2_request.dart';
+import 'package:c2/main.dart';
+
 final ValueNotifier<List<TransactionString>> transactionsNotifier =
     ValueNotifier<List<TransactionString>>([
       TransactionString.header(),
@@ -103,32 +107,103 @@ class TransactionCell extends StatelessWidget {
   final TransactionString transaction;
   final bool editable;
 
+  void showEditDialog(BuildContext context) {
+    final notesController = TextEditingController(text: transaction.note);
+    final amountController = TextEditingController(
+      text: transaction.amount.replaceAll('\$', ''),
+    );
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit Transaction'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(labelText: 'Note'),
+            ),
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Amount (e.g., 45.00)',
+                prefixText: '\$',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final dollars = double.parse(amountController.text);
+              final cents = (dollars * 100).toStringAsFixed(0);
+
+              sendRequest(
+                'kTransactionEditRequest',
+                '${transaction.id},$gCurrentUsername,${notesController.text},$cents',
+              );
+
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key('transaction_$index'),
       background: Container(
-        color: Colors.blue,
+        color: AppColors.contentColorBlue,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Icon(Icons.edit, color: Colors.white),
-            Text('Edit', style: TextStyle(color: Colors.white)),
+            const Icon(Icons.edit, color: Colors.white),
+            const Text('Edit', style: TextStyle(color: Colors.white)),
           ],
         ),
       ),
       secondaryBackground: Container(
-        color: Colors.red,
+        color: AppColors.contentColorRed,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
-            Icon(Icons.delete, color: Colors.white),
-            Text('Delete', style: TextStyle(color: Colors.white)),
+            const Icon(Icons.delete, color: Colors.white),
+            const Text('Delete', style: TextStyle(color: Colors.white)),
           ],
         ),
       ),
-      onDismissed: (direction) {
-        // Handle swipe actions
+      direction: DismissDirection.horizontal,
+      confirmDismiss: (direction) async {
+        if (!editable) return false;
+
+        // Left swipe (will finish): treat as edit, not delete
+        if (direction == DismissDirection.startToEnd) {
+          showEditDialog(context);
+          return false; // DON'T remove from list
+        }
+
+        // Right swipe (will finish): delete
+        if (direction == DismissDirection.endToStart) {
+          sendRequest(
+            'kTransactionDeleteRequest',
+            '${transaction.id},$gCurrentUsername',
+          );
+          return true; // remove from list
+        }
+
+        return false;
       },
       child: HStack([
         SizedBox(width: 200, height: 40, child: Text(transaction.date)),

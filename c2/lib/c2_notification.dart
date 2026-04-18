@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:c2/balance_card.dart';
 import 'package:c2/cash_flow_line_chart.dart';
 import 'package:c2/c2_message.dart';
 import 'package:c2/expenses_pie_chart.dart';
@@ -67,6 +68,23 @@ void processExpenseReportNotification(List<int> data) {
   ).toPercentages();
 }
 
+void processBalanceReportNotification(List<int> data) {
+  final lastIncome = data[0];
+  final lastExpense = data[1];
+  final lastNet = lastIncome - lastExpense;
+  final thisIncome = data[2];
+  final thisExpense = data[3];
+  final thisNet = thisIncome - thisExpense;
+  balanceNotifier.value = Balance(
+    incomeCents: thisIncome,
+    incomePercentDiff: thisIncome / lastIncome,
+    expensesCents: thisExpense,
+    expensePercentDiff: thisExpense / lastExpense,
+    netCents: thisNet,
+    netPercentDiff: thisNet / lastNet,
+  );
+}
+
 void processTransactionListNotification(List<Transaction> data) {
   transactionsNotifier.value = [
     TransactionString.header(),
@@ -96,6 +114,8 @@ void processNotification(String notificationName, String notificationData) {
     processCashFlowNotification(stringToIntArray(notificationData));
   } else if (notificationName == "kExpenseReportNotification") {
     processExpenseReportNotification(stringToIntArray(notificationData));
+  } else if (notificationName == "kBalanceReportNotification") {
+    processBalanceReportNotification(stringToIntArray(notificationData));
   } else if (notificationName == "kTransactionListNotification") {
     processTransactionListNotification(parseTransactions(notificationData));
   } else {

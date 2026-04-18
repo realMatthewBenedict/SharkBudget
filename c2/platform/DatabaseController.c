@@ -150,6 +150,55 @@ void c2dao_insertTrans(sqlite3 *db, const Transaction *t) {
   sqlite3_finalize(stmt);
 }
 
+void c2dao_editTrans(sqlite3 *db, const char *username, int64_t id,
+                     const char *note, int64_t amount_cents) {
+  sqlite3_stmt *stmt;
+  const char *sql = "UPDATE transactions "
+                    "SET note = ?, amount_cents = ? "
+                    "WHERE id = ? AND username = ?";
+
+  int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "c2dao_editTrans prepare failed: %s\n", sqlite3_errmsg(db));
+    abort();
+  }
+
+  bind_text_or_null(stmt, 1, note);
+  sqlite3_bind_int64(stmt, 2, amount_cents);
+  sqlite3_bind_int64(stmt, 3, id);
+  bind_text_or_null(stmt, 4, username);
+
+  rc = sqlite3_step(stmt);
+  if (rc != SQLITE_DONE) {
+    fprintf(stderr, "c2dao_editTrans step failed: %s\n", sqlite3_errmsg(db));
+    abort();
+  }
+  sqlite3_finalize(stmt);
+}
+
+void c2dao_deleteTrans(sqlite3 *db, const char *username, int64_t id) {
+  sqlite3_stmt *stmt;
+  const char *sql = "DELETE FROM transactions WHERE id = ? AND username = ?";
+
+  int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Transaction delete prepare failed: %s\n",
+            sqlite3_errmsg(db));
+    abort();
+  }
+
+  sqlite3_bind_int64(stmt, 1, id);
+  bind_text_or_null(stmt, 2, username);
+
+  // Run the query
+  rc = sqlite3_step(stmt);
+  if (rc != SQLITE_DONE) {
+    fprintf(stderr, "Transaction delete step failed: %s\n", sqlite3_errmsg(db));
+    abort();
+  }
+  sqlite3_finalize(stmt);
+}
+
 bool c2dao_queryUser(sqlite3 *db, const char *username,
                      const char *password_hash) {
   sqlite3_stmt *stmt;

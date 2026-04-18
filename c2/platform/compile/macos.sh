@@ -6,4 +6,4 @@ clang -shared -fPIC \
     "$DART_SDK/include/dart_api_dl.c" \
     platform/*.c \
     -lsqlite3 && \
-    clang-format -i platform/*.c
+    clang-format -i platform/*.h platform/*.c

@@ -81,3 +81,22 @@ ExpenseReport *expenseBreakdown(BackendController *b, int64_t start_timestamp,
   }
   return result;
 }
+
+BalanceReport *balanceBreakdown(BackendController *b, int64_t start_timestamp,
+                                int64_t end_timestamp) {
+  TransactionVector v = c2dao_queryTrans(b->globalDB, b->username,
+                                         start_timestamp, end_timestamp);
+  BalanceReport *result = malloc(sizeof(BalanceReport));
+  for (int i = 0; i < cvector_size(v); ++i) {
+    Transaction *t = v[i];
+    if (strcmp(t->type, "Expense") == 0) {
+      result->expense += t->amount_cents;
+    } else if (strcmp(t->type, "Income") == 0) {
+      result->income += t->amount_cents;
+    } else {
+      // This should not happen
+      fprintf(stderr, "Unrecognized transaction type: %s", t->type);
+    }
+  }
+  return result;
+}
