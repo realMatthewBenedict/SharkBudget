@@ -10,7 +10,7 @@ class CashFlowChartData {
 
   static List<FlSpot> _processMainData(List<int> netCashFlow) {
     return netCashFlow.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.toDouble());
+      return FlSpot(entry.key.toDouble(), entry.value.toDouble() / 100);
     }).toList();
   }
 
@@ -19,7 +19,7 @@ class CashFlowChartData {
     double avgCashFlow,
   ) {
     return netCashFlow.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), avgCashFlow);
+      return FlSpot(entry.key.toDouble(), avgCashFlow / 100);
     }).toList();
   }
 
@@ -79,7 +79,7 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
                   style: TextStyle(
                     fontSize: 12,
                     color: showAvg
-                        ? Colors.white.withOpacity(0.5)
+                        ? Colors.white.withValues(alpha: 0.5)
                         : Colors.white,
                   ),
                 ),
@@ -161,7 +161,7 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
               colors: const [
                 AppColors.contentColorCyan,
                 AppColors.contentColorBlue,
-              ].map((color) => color.withOpacity(0.3)).toList(),
+              ].map((color) => color.withValues(alpha: 0.3)).toList(),
             ),
           ),
         ),
@@ -176,7 +176,7 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
     ];
 
     return LineChartData(
-      lineTouchData: const LineTouchData(enabled: false),
+      lineTouchData: const LineTouchData(enabled: true),
       gridData: FlGridData(
         show: true,
         drawHorizontalLine: true,
@@ -246,11 +246,11 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
                 ColorTween(
                   begin: gradientColors[0],
                   end: gradientColors[1],
-                ).lerp(0.2)!.withOpacity(0.1),
+                ).lerp(0.2)!.withValues(alpha: 0.1),
                 ColorTween(
                   begin: gradientColors[0],
                   end: gradientColors[1],
-                ).lerp(0.2)!.withOpacity(0.1),
+                ).lerp(0.2)!.withValues(alpha: 0.1),
               ],
             ),
           ),

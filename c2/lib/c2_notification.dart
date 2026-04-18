@@ -14,22 +14,23 @@ List<int> stringToIntArray(String s) {
 List<Transaction> parseTransactions(String s) {
   final data = s.split(',');
 
-  // Each transaction has 7 fields, starting at indices 0, 7, ...
+  // Each transaction has 8 fields, starting at indices 0, 8, ...
   final transactions = <Transaction>[];
 
-  for (int i = 0; i < data.length; i += 7) {
-    if (i + 6 >= data.length) {
+  for (int i = 0; i < data.length; i += 8) {
+    if (i + 7 >= data.length) {
       break; // Not enough fields for complete transaction
     }
 
     final transaction = Transaction(
       int.parse(data[i]), // id
-      int.parse(data[i + 1]), // unix timestamp
-      data[i + 2], // type
-      data[i + 3], // category
-      data[i + 4], // source/merchant
-      data[i + 5], // note
-      int.parse(data[i + 6]), // amount in cents
+      data[i + 1], // username
+      int.parse(data[i + 2]), // unix timestamp
+      data[i + 3], // type
+      data[i + 4], // category
+      data[i + 5], // source/merchant
+      data[i + 6], // note
+      int.parse(data[i + 7]), // amount in cents
     );
 
     transactions.add(transaction);
@@ -73,8 +74,25 @@ void processTransactionListNotification(List<Transaction> data) {
   ];
 }
 
+typedef LoginCallback = void Function(bool success);
+// Populated by _LoginScreenState
+LoginCallback? gOnSignupResult;
+LoginCallback? gOnLoginResult;
+
+void processUserSignupNotification() {
+  gOnSignupResult?.call(true);
+}
+
+void processUserLoginNotification(bool result) {
+  gOnLoginResult?.call(result);
+}
+
 void processNotification(String notificationName, String notificationData) {
-  if (notificationName == "kCashFlowNotification") {
+  if (notificationName == "kUserSignupNotification") {
+    processUserSignupNotification();
+  } else if (notificationName == "kUserLoginNotification") {
+    processUserLoginNotification(notificationData == "1");
+  } else if (notificationName == "kCashFlowNotification") {
     processCashFlowNotification(stringToIntArray(notificationData));
   } else if (notificationName == "kExpenseReportNotification") {
     processExpenseReportNotification(stringToIntArray(notificationData));

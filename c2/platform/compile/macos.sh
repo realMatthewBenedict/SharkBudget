@@ -5,4 +5,5 @@ clang -shared -fPIC \
     -o macos/Runner/Frameworks/libbackend.dylib \
     "$DART_SDK/include/dart_api_dl.c" \
     platform/*.c \
-    -lsqlite3
+    -lsqlite3 && \
+    clang-format -i platform/*.c

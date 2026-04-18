@@ -6,6 +6,7 @@ final ValueNotifier<List<TransactionString>> transactionsNotifier =
       TransactionString.header(),
       Transaction(
         null,
+        "admin",
         1772409600,
         "Expense",
         "Housing",
@@ -15,6 +16,7 @@ final ValueNotifier<List<TransactionString>> transactionsNotifier =
       ).toTransString(),
       Transaction(
         null,
+        "admin",
         1772496000,
         "Expense",
         "Food",
@@ -24,6 +26,7 @@ final ValueNotifier<List<TransactionString>> transactionsNotifier =
       ).toTransString(),
       Transaction(
         null,
+        "admin",
         1772496000,
         "Expense",
         "Transport",
@@ -57,6 +60,7 @@ class TransactionString {
 class Transaction {
   Transaction(
     this.id,
+    this.username,
     this.unixDate,
     this.type,
     this.category,
@@ -67,6 +71,7 @@ class Transaction {
 
   int? id;
   final int unixDate;
+  final String username;
   final String type;
   final String category;
   final String source;

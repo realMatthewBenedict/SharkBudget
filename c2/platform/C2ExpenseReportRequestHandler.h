@@ -1,1 +1,1 @@
-void process_expense_report_request(void);
+void process_expense_report_request(const char* databasePath, const char* username);

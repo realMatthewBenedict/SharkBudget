@@ -7,8 +7,8 @@
 #include "StringHandler.h"
 #include "TimeHandler.h"
 
-void process_cash_flow_request() {
-  BackendController *b = createBackend();
+void process_cash_flow_request(const char *databasePath, const char *username) {
+  BackendController *b = createBackend(databasePath, username);
   int num_timestamps = 13;
 
   int64_t *timestamps = construct_timestamps(num_timestamps);

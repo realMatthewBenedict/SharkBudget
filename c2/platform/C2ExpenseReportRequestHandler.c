@@ -5,8 +5,9 @@
 #include "StringHandler.h"
 #include "TimeHandler.h"
 
-void process_expense_report_request() {
-  BackendController *b = createBackend();
+void process_expense_report_request(const char *databasePath,
+                                    const char *username) {
+  BackendController *b = createBackend(databasePath, username);
   int64_t *timestamps = construct_timestamps(2);
   ExpenseReport *report = expenseBreakdown(b, timestamps[0], timestamps[1]);
 

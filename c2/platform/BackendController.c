@@ -1,9 +1,11 @@
 #include "BackendController.h"
 #include "StringHandler.h"
 
-BackendController *createBackend() {
+BackendController *createBackend(const char *databasePath,
+                                 const char *username) {
   BackendController *b = malloc(sizeof(BackendController));
-  b->globalDB = c2dao_initDB();
+  b->globalDB = c2dao_initDB(databasePath);
+  b->username = strdup(username);
   return b;
 }
 
@@ -14,8 +16,8 @@ void freeBackend(BackendController *b) {
 
 static int64_t getNetCashFlow(BackendController *b, int64_t start_timestamp,
                               int64_t end_timestamp) {
-  TransactionVector v =
-      c2dao_queryTrans(b->globalDB, start_timestamp, end_timestamp);
+  TransactionVector v = c2dao_queryTrans(b->globalDB, b->username,
+                                         start_timestamp, end_timestamp);
   int result_cents = 0; // income - expense
   for (int i = 0; i < cvector_size(v); ++i) {
     Transaction *t = v[i];
@@ -56,8 +58,8 @@ int64_t *avgCashFlow(int64_t timestamps[static 2], int64_t cash_flow[static 1],
 
 ExpenseReport *expenseBreakdown(BackendController *b, int64_t start_timestamp,
                                 int64_t end_timestamp) {
-  TransactionVector v =
-      c2dao_queryTrans(b->globalDB, start_timestamp, end_timestamp);
+  TransactionVector v = c2dao_queryTrans(b->globalDB, b->username,
+                                         start_timestamp, end_timestamp);
   ExpenseReport *result = malloc(sizeof(ExpenseReport));
   for (int i = 0; i < cvector_size(v); ++i) {
     Transaction *t = v[i];

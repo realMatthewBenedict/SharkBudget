@@ -26,13 +26,18 @@ String transactionToString(const Transaction *t) {
   char *id = intToString(t->id);
   char *unixTime = intToString(t->unix_time);
   char *amountCents = intToString(t->amount_cents);
-  cstring_array_push_back(v, id, strlen(id));
-  cstring_array_push_back(v, unixTime, strlen(unixTime));
-  cstring_array_push_back(v, t->type, strlen(t->type));
-  cstring_array_push_back(v, t->category, strlen(t->category));
-  cstring_array_push_back(v, t->source, strlen(t->source));
-  cstring_array_push_back(v, t->note, strlen(t->note));
-  cstring_array_push_back(v, amountCents, strlen(amountCents));
+
+#define safe_strlen(s) ((s) ? strlen(s) : 0)
+  cstring_array_push_back(v, id, safe_strlen(id));
+  cstring_array_push_back(v, t->username, safe_strlen(t->username));
+  cstring_array_push_back(v, unixTime, safe_strlen(unixTime));
+  cstring_array_push_back(v, t->type, safe_strlen(t->type));
+  cstring_array_push_back(v, t->category, safe_strlen(t->category));
+  cstring_array_push_back(v, t->source, safe_strlen(t->source));
+  cstring_array_push_back(v, t->note, safe_strlen(t->note));
+  cstring_array_push_back(v, amountCents, safe_strlen(amountCents));
+#undef safe_strlen
+
   char *delimiter = ",";
   String str = NULL;
   cstring_array_join(v, delimiter, 1, str);

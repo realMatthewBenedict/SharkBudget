@@ -1,16 +1,23 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as path;
+import 'package:sqflite/sqflite.dart' as db;
 import 'package:velocity_x/velocity_x.dart';
 
 import 'package:c2/app_colors.dart';
 import 'package:c2/cash_flow_line_chart.dart';
 import 'package:c2/c2_request.dart';
+import 'package:c2/c2_notification.dart';
 import 'package:c2/expenses_pie_chart.dart';
 import 'package:c2/transaction_cell.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+late String gCurrentUsername;
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -32,7 +39,221 @@ class MyApp extends StatelessWidget {
         /* dark theme settings */
       ),
       themeMode: ThemeMode.system,
-      home: const MainContent(),
+      home: const LoginScreen(),
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final userController = TextEditingController();
+  final passController = TextEditingController();
+  bool _loggingIn = false;
+  String? _error;
+
+  Future<String> getDatabasesPath() async {
+    return db.getDatabasesPath();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    gOnSignupResult = onSignupResult;
+    gOnLoginResult = onLoginResult;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      sendRequest(
+        "kSetDatabasePath",
+        path.join(await getDatabasesPath(), "shark_transactions.db"),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    userController.dispose();
+    passController.dispose();
+    super.dispose();
+  }
+
+  String hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString(); // hex string
+  }
+
+  void tryLogin() {
+    final username = userController.text.trim();
+    final password = passController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Please fill both fields');
+      return;
+    }
+
+    setState(() {
+      _loggingIn = true;
+      _error = null;
+    });
+
+    final hashed = hashPassword(password);
+    sendRequest('kUserLoginRequest', '$username,$hashed');
+  }
+
+  void showSignUpDialog() {
+    final userController = TextEditingController();
+    final passController = TextEditingController();
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Sign Up'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: userController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (error != null)
+                  Text(error!, style: const TextStyle(color: Colors.red)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final username = userController.text.trim();
+                final password = passController.text;
+
+                if (username.isEmpty || password.isEmpty) {
+                  setState(() => error = 'Both fields are required');
+                  return;
+                }
+
+                // Hash the password before sending
+                final hashed = hashPassword(password);
+                sendRequest('kUserSignupRequest', '$username,$hashed');
+
+                // Close dialog
+                Navigator.pop(context);
+              },
+              child: const Text('Sign Up'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Called from C after sign‑up attempt
+  void onSignupResult(bool success) {
+    if (!mounted) return;
+    if (success) {
+      // Option A: show success, keep user on login but reset fields
+      userController.clear();
+      passController.clear();
+      setState(() => _error = 'Sign‑up successful, please log in');
+    }
+  }
+
+  /// Called from C after login attempt
+  void onLoginResult(bool success) {
+    if (!mounted) return;
+
+    setState(() {
+      _loggingIn = false;
+    });
+
+    if (success) {
+      gCurrentUsername = userController.text.trim();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainContent()),
+      );
+    } else {
+      setState(() {
+        _error = 'Invalid username or password';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Shark Budget Login'),
+        automaticallyImplyLeading: false,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: userController,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_error != null)
+              Text(_error!, style: TextStyle(color: Colors.red)),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _loggingIn ? null : tryLogin,
+              child: _loggingIn
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Log In'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: showSignUpDialog,
+              child: const Text('Sign Up'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -53,9 +274,9 @@ class MainContentState extends State<MainContent>
     super.initState();
     _controller = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      sendRequest("kCashFlowRequest", "");
-      sendRequest("kExpenseReportRequest", "");
-      sendRequest("kTransactionListRequest", "");
+      sendRequest("kCashFlowRequest", gCurrentUsername);
+      sendRequest("kExpenseReportRequest", gCurrentUsername);
+      sendRequest("kTransactionListRequest", gCurrentUsername);
     });
   }
 
@@ -185,7 +406,7 @@ class MainContentState extends State<MainContent>
                   final cents = (dollars * 100).toStringAsFixed(0);
                   sendRequest(
                     "kNewTransactionRequest",
-                    "$unixSeconds,${typeController.text},"
+                    "$gCurrentUsername,$unixSeconds,${typeController.text},"
                         "${categoryController.text},${sourceController.text},"
                         "${noteController.text},$cents",
                   );

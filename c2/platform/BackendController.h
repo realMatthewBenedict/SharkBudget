@@ -3,6 +3,7 @@
 
 typedef struct {
     sqlite3* globalDB;
+    const char* username;
 } BackendController;
 
 typedef struct {
@@ -13,7 +14,7 @@ typedef struct {
     int64_t other;
 } ExpenseReport;
 
-BackendController* createBackend();
+BackendController* createBackend(const char* databasePath, const char* username);
 void freeBackend(BackendController* b);
 
 int64_t* getNetCashFlowArray(BackendController* b, int64_t timestamps[static 2], int num_timestamps);

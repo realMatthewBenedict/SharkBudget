@@ -1,35 +1,86 @@
 #include "DatabaseController.h"
 
-sqlite3 *c2dao_initDB() {
-  // Creation
-  sqlite3 *db;
-  int retCode = sqlite3_open("shark_transactions.db", &db);
-  if (retCode) {
-    fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-    abort();
-  } else {
-    printf("Opened database successfully\n");
-  }
+void log_transaction(const Transaction *t, const char *action) {
+  fprintf(stderr,
+          "%s with username %s at unix time %lld, type %s, "
+          "category %s, source %s, note %s, amount %lld cents\n",
+          action, t->username, t->unix_time, t->type, t->category, t->source,
+          t->note, t->amount_cents);
+}
 
-  char *sql = "CREATE TABLE IF NOT EXISTS transactions("
-              "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-              "unix_time INTEGER,"
-              "type TEXT,"
-              "category TEXT,"
-              "source TEXT,"
-              "note TEXT,"
-              "amount_cents INTEGER);";
+static bool tableExists(sqlite3 *db, const char *tableName) {
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?";
+
+  int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK)
+    return 0;
+
+  sqlite3_bind_text(stmt, 1, tableName, -1, SQLITE_STATIC);
+
+  rc = sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  return rc == SQLITE_ROW;
+}
+
+static void executeUnboundSQL(sqlite3 *db, const char *sql_literal,
+                              const char *success, const char *fail) {
   char *errMsg = NULL;
-
-  retCode = sqlite3_exec(db, sql, NULL, NULL, &errMsg);
+  int retCode = sqlite3_exec(db, sql_literal, NULL, NULL, &errMsg);
   if (retCode == SQLITE_OK) {
-    printf("Database initialized\n");
+    fprintf(stderr, "%s\n", success);
   } else {
-    fprintf(stderr, "SQL error when creating table: %s\n", errMsg);
+    fprintf(stderr, "%s: %s\n", fail, errMsg);
     sqlite3_free(errMsg);
     sqlite3_close(db);
     abort();
   }
+}
+
+sqlite3 *c2dao_initDB(const char *databasePath) {
+  // Creation
+  sqlite3 *db;
+  int retCode = sqlite3_open(databasePath, &db);
+  if (retCode) {
+    fprintf(stderr, "Can't open database at %s: %s\n", databasePath,
+            sqlite3_errmsg(db));
+    abort();
+  } else {
+    printf("Opened database successfully\n");
+  }
+  char *errMsg = NULL;
+  /*
+  executeUnboundSQL(db, "DROP TABLE users;", "Users dropped",
+                    "SQL error when dropping users");
+  executeUnboundSQL(db, "DROP TABLE transactions;", "Transactions dropped",
+                    "SQL error when dropping transactions");
+  */
+
+  if (!tableExists(db, "users")) {
+    char *user_sql = "CREATE TABLE users("
+                     "username TEXT PRIMARY KEY NOT NULL,"
+                     "password_hash TEXT);";
+    executeUnboundSQL(db, user_sql, "Users table created",
+                      "SQL error when creating users table");
+  }
+
+  if (!tableExists(db, "transactions")) {
+    char *trans_sql = "CREATE TABLE transactions("
+                      "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+                      "username TEXT NOT NULL,"
+                      "unix_time INTEGER,"
+                      "type TEXT,"
+                      "category TEXT,"
+                      "source TEXT,"
+                      "note TEXT,"
+                      "amount_cents INTEGER,"
+                      "FOREIGN KEY (username) REFERENCES users (username));";
+    executeUnboundSQL(db, trans_sql, "Transactions table created",
+                      "SQL error when creating transactions table");
+  }
+
   return db;
 }
 
@@ -41,31 +92,22 @@ static void bind_text_or_null(sqlite3_stmt *stmt, int index, const char *text) {
   }
 }
 
-void c2dao_insertTrans(sqlite3 *db, const Transaction *t) {
+void c2dao_insertUser(sqlite3 *db, const char *username,
+                      const char *password_hash) {
   sqlite3_stmt *stmt;
-  const char *sql = "INSERT INTO transactions (unix_time, type, category, "
-                    "source, note, amount_cents) "
-                    "VALUES (?, ?, ?, ?, ?, ?)";
-
+  const char *sql = "INSERT INTO users (username, password_hash) "
+                    "VALUES (?, ?)";
   int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
   if (rc != SQLITE_OK) {
-    fprintf(stderr, "Insert prepare failed: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "Insert user prepare failed: %s\n", sqlite3_errmsg(db));
     abort();
   }
-
-  // Bind correctly by schema order (skip ID - autoincrement)
-  sqlite3_bind_int64(stmt, 1, t->unix_time);
-
-  bind_text_or_null(stmt, 2, t->type);
-  bind_text_or_null(stmt, 3, t->category);
-  bind_text_or_null(stmt, 4, t->source);
-  bind_text_or_null(stmt, 5, t->note);
-
-  sqlite3_bind_int64(stmt, 6, t->amount_cents);
-
+  // Bind correctly by schema order
+  bind_text_or_null(stmt, 1, username);
+  bind_text_or_null(stmt, 2, password_hash);
   rc = sqlite3_step(stmt);
   if (rc != SQLITE_DONE) {
-    fprintf(stderr, "Insert step failed: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "Insert user step failed: %s\n", sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
     abort();
   }
@@ -73,11 +115,69 @@ void c2dao_insertTrans(sqlite3 *db, const Transaction *t) {
   sqlite3_finalize(stmt);
 }
 
-TransactionVector c2dao_queryTrans(sqlite3 *db, long long unix_start,
-                                   long long unix_end) {
+void c2dao_insertTrans(sqlite3 *db, const Transaction *t) {
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "INSERT INTO transactions (username, unix_time, type, category, "
+      "source, note, amount_cents) "
+      "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+  int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Insert transaction prepare failed: %s\n",
+            sqlite3_errmsg(db));
+    abort();
+  }
+
+  // Bind correctly by schema order (skip ID - autoincrement)
+  bind_text_or_null(stmt, 1, t->username);
+  sqlite3_bind_int64(stmt, 2, t->unix_time);
+  bind_text_or_null(stmt, 3, t->type);
+  bind_text_or_null(stmt, 4, t->category);
+  bind_text_or_null(stmt, 5, t->source);
+  bind_text_or_null(stmt, 6, t->note);
+  sqlite3_bind_int64(stmt, 7, t->amount_cents);
+
+  log_transaction(t, "Attempt to insert transaction");
+
+  rc = sqlite3_step(stmt);
+  if (rc != SQLITE_DONE) {
+    fprintf(stderr, "Insert transaction step failed: %s\n", sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    abort();
+  }
+
+  sqlite3_finalize(stmt);
+}
+
+bool c2dao_queryUser(sqlite3 *db, const char *username,
+                     const char *password_hash) {
+  sqlite3_stmt *stmt;
+  const char *sql =
+      "SELECT * FROM users WHERE username = ? AND password_hash = ?";
+
+  int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "User login check prepare failed: %s\n",
+            sqlite3_errmsg(db));
+    return false;
+  }
+
+  bind_text_or_null(stmt, 1, username);
+  bind_text_or_null(stmt, 2, password_hash);
+
+  // Run the query
+  rc = sqlite3_step(stmt);
+  sqlite3_finalize(stmt);
+
+  return rc == SQLITE_ROW;
+}
+
+TransactionVector c2dao_queryTrans(sqlite3 *db, const char *username,
+                                   long long unix_start, long long unix_end) {
   sqlite3_stmt *stmt;
   const char *sql = "SELECT * FROM transactions "
-                    "WHERE unix_time >= ? AND unix_time < ? "
+                    "WHERE username = ? AND unix_time >= ? AND unix_time < ? "
                     "ORDER BY unix_time ASC";
 
   int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
@@ -87,35 +187,40 @@ TransactionVector c2dao_queryTrans(sqlite3 *db, long long unix_start,
     abort();
   }
 
-  sqlite3_bind_int64(stmt, 1, unix_start);
-  sqlite3_bind_int64(stmt, 2, unix_end);
+  bind_text_or_null(stmt, 1, username);
+  sqlite3_bind_int64(stmt, 2, unix_start);
+  sqlite3_bind_int64(stmt, 3, unix_end);
 
   TransactionVector results = NULL;
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     Transaction *t = malloc(sizeof(Transaction));
 
     t->id = sqlite3_column_int64(stmt, 0);
-    t->unix_time = sqlite3_column_int64(stmt, 1);
-    t->amount_cents = sqlite3_column_int64(stmt, 6);
+    t->unix_time = sqlite3_column_int64(stmt, 2);
+    t->amount_cents = sqlite3_column_int64(stmt, 7);
 
     // Copy TEXT columns correctly
     const char *text;
     int len;
 
-    text = (const char *)sqlite3_column_text(stmt, 2);
-    len = sqlite3_column_bytes(stmt, 2);
-    t->type = text && len > 0 ? strdup(text) : NULL;
+    text = (const char *)sqlite3_column_text(stmt, 1);
+    len = sqlite3_column_bytes(stmt, 1);
+    t->username = text && len > 0 ? strdup(text) : NULL;
 
     text = (const char *)sqlite3_column_text(stmt, 3);
     len = sqlite3_column_bytes(stmt, 3);
-    t->category = text && len > 0 ? strdup(text) : NULL;
+    t->type = text && len > 0 ? strdup(text) : NULL;
 
     text = (const char *)sqlite3_column_text(stmt, 4);
     len = sqlite3_column_bytes(stmt, 4);
-    t->source = text && len > 0 ? strdup(text) : NULL;
+    t->category = text && len > 0 ? strdup(text) : NULL;
 
     text = (const char *)sqlite3_column_text(stmt, 5);
     len = sqlite3_column_bytes(stmt, 5);
+    t->source = text && len > 0 ? strdup(text) : NULL;
+
+    text = (const char *)sqlite3_column_text(stmt, 6);
+    len = sqlite3_column_bytes(stmt, 6);
     t->note = text && len > 0 ? strdup(text) : NULL;
 
     cvector_push_back(results, t);
