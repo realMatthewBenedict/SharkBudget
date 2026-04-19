@@ -28,8 +28,6 @@ class CashFlowChartData {
       avgData = _processAvgData(netCashFlow, avgCashFlow);
 }
 
-final ValueNotifier<CashFlowChartData?> cashFlowNotifier = ValueNotifier(null);
-
 class CashFlowLineChart extends StatefulWidget {
   const CashFlowLineChart({super.key});
 
@@ -38,7 +36,9 @@ class CashFlowLineChart extends StatefulWidget {
 }
 
 class CashFlowLineChartState extends State<CashFlowLineChart> {
-  bool showAvg = false;
+  static final ValueNotifier<CashFlowChartData?> cashFlowNotifier =
+      ValueNotifier(null);
+  bool _showAvg = false;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,7 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
                 child: data == null
                     ? const Center(child: CircularProgressIndicator())
                     : LineChart(
-                        showAvg
+                        _showAvg
                             ? avgData(data.avgData)
                             : mainData(data.mainData),
                       ),
@@ -71,14 +71,14 @@ class CashFlowLineChartState extends State<CashFlowLineChart> {
               child: TextButton(
                 onPressed: () {
                   setState(() {
-                    showAvg = !showAvg;
+                    _showAvg = !_showAvg;
                   });
                 },
                 child: Text(
                   'avg',
                   style: TextStyle(
                     fontSize: 12,
-                    color: showAvg
+                    color: _showAvg
                         ? Colors.white.withValues(alpha: 0.5)
                         : Colors.white,
                   ),

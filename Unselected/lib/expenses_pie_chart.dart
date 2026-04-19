@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:c2/app_colors.dart';
-import 'package:c2/indicator.dart';
 
 class ExpenseReport {
   ExpenseReport(
@@ -33,10 +32,48 @@ class ExpenseReport {
   }
 }
 
-final ValueNotifier<List<double>> expensesNotifier =
-    ValueNotifier<List<double>>(<double>[70, 10, 15, 5, 0]);
-
 // ----- widget -----
+
+class LegendIndicator extends StatelessWidget {
+  const LegendIndicator({
+    super.key,
+    required this.color,
+    required this.text,
+    required this.isSquare,
+    this.size = 16,
+    this.textColor,
+  });
+  final Color color;
+  final String text;
+  final bool isSquare;
+  final double size;
+  final Color? textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: isSquare ? BoxShape.rectangle : BoxShape.circle,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class ExpensesPieChart extends StatefulWidget {
   const ExpensesPieChart({super.key});
@@ -46,7 +83,9 @@ class ExpensesPieChart extends StatefulWidget {
 }
 
 class ExpensesPieChartState extends State<ExpensesPieChart> {
-  int touchedIndex = -1;
+  static final ValueNotifier<List<double>> expensesNotifier =
+      ValueNotifier<List<double>>(<double>[70, 10, 15, 5, 0]);
+  int _touchedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +110,10 @@ class ExpensesPieChartState extends State<ExpensesPieChart> {
                             if (!event.isInterestedForInteractions ||
                                 pieTouchResponse == null ||
                                 pieTouchResponse.touchedSection == null) {
-                              touchedIndex = -1;
+                              _touchedIndex = -1;
                               return;
                             }
-                            touchedIndex = pieTouchResponse
+                            _touchedIndex = pieTouchResponse
                                 .touchedSection!
                                 .touchedSectionIndex;
                           });
@@ -92,31 +131,31 @@ class ExpensesPieChartState extends State<ExpensesPieChart> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Indicator(
+                  LegendIndicator(
                     color: AppColors.contentColorBlue,
                     text: 'Bills',
                     isSquare: true,
                   ),
                   SizedBox(height: 4),
-                  Indicator(
+                  LegendIndicator(
                     color: AppColors.contentColorYellow,
                     text: 'Food',
                     isSquare: true,
                   ),
                   SizedBox(height: 4),
-                  Indicator(
+                  LegendIndicator(
                     color: AppColors.contentColorGreen,
                     text: 'Housing',
                     isSquare: true,
                   ),
                   SizedBox(height: 4),
-                  Indicator(
+                  LegendIndicator(
                     color: AppColors.contentColorRed,
                     text: 'Transport',
                     isSquare: true,
                   ),
                   SizedBox(height: 4),
-                  Indicator(
+                  LegendIndicator(
                     color: AppColors.contentColorBlack,
                     text: 'Other',
                     isSquare: true,
@@ -134,7 +173,7 @@ class ExpensesPieChartState extends State<ExpensesPieChart> {
 
   List<PieChartSectionData> showingSections(List<double> valueData) {
     return List.generate(5, (i) {
-      final isTouched = i == touchedIndex;
+      final isTouched = i == _touchedIndex;
       final fontSize = isTouched ? 25.0 : 16.0;
       final radius = isTouched ? 60.0 : 50.0;
       const shadows = [Shadow(color: Colors.black, blurRadius: 2)];

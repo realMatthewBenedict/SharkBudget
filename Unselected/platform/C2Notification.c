@@ -6,9 +6,6 @@
 
 #include "C2Notification.h"
 
-// Callback types matching Dart
-typedef void (*ProcessNotificationCallback)(void *);
-
 DART_EXPORT intptr_t InitDartApiDL(void *data) {
   intptr_t result = Dart_InitializeApiDL(data);
   fprintf(stderr, "Dart_InitializeApiDL result: %ld\n", result);

@@ -1,5 +1,7 @@
 #include "DatabaseController.h"
 
+// Transaction
+
 void log_transaction(const Transaction *t, const char *action) {
   fprintf(stderr,
           "%s with username %s at unix time %lld, type %s, "
@@ -7,6 +9,8 @@ void log_transaction(const Transaction *t, const char *action) {
           action, t->username, t->unix_time, t->type, t->category, t->source,
           t->note, t->amount_cents);
 }
+
+// Private methods
 
 static bool tableExists(sqlite3 *db, const char *tableName) {
   sqlite3_stmt *stmt;
@@ -38,6 +42,16 @@ static void executeUnboundSQL(sqlite3 *db, const char *sql_literal,
     abort();
   }
 }
+
+static void bind_text_or_null(sqlite3_stmt *stmt, int index, const char *text) {
+  if (text && text[0] != '\0') {
+    sqlite3_bind_text(stmt, index, text, -1, SQLITE_TRANSIENT);
+  } else {
+    sqlite3_bind_null(stmt, index);
+  }
+}
+
+// Public methods
 
 sqlite3 *c2dao_initDB(const char *databasePath) {
   // Creation
@@ -82,14 +96,6 @@ sqlite3 *c2dao_initDB(const char *databasePath) {
   }
 
   return db;
-}
-
-static void bind_text_or_null(sqlite3_stmt *stmt, int index, const char *text) {
-  if (text && text[0] != '\0') {
-    sqlite3_bind_text(stmt, index, text, -1, SQLITE_TRANSIENT);
-  } else {
-    sqlite3_bind_null(stmt, index);
-  }
 }
 
 void c2dao_insertUser(sqlite3 *db, const char *username,

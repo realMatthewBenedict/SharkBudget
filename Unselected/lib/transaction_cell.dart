@@ -5,41 +5,6 @@ import 'package:c2/app_colors.dart';
 import 'package:c2/c2_request.dart';
 import 'package:c2/main.dart';
 
-final ValueNotifier<List<TransactionString>> transactionsNotifier =
-    ValueNotifier<List<TransactionString>>([
-      TransactionString.header(),
-      Transaction(
-        null,
-        "admin",
-        1772409600,
-        "Expense",
-        "Housing",
-        "Rent Payment",
-        "Monthly rent",
-        120000,
-      ).toTransString(),
-      Transaction(
-        null,
-        "admin",
-        1772496000,
-        "Expense",
-        "Food",
-        "Walmart",
-        "–",
-        8550,
-      ).toTransString(),
-      Transaction(
-        null,
-        "admin",
-        1772496000,
-        "Expense",
-        "Transport",
-        "Gas Station",
-        "–",
-        4500,
-      ).toTransString(),
-    ]);
-
 class TransactionString {
   TransactionString.header();
   TransactionString(
@@ -146,7 +111,7 @@ class TransactionCell extends StatelessWidget {
               final dollars = double.parse(amountController.text);
               final cents = (dollars * 100).toStringAsFixed(0);
 
-              sendRequest(
+              C2Request.sendRequest(
                 'kTransactionEditRequest',
                 '${transaction.id},$gCurrentUsername,${notesController.text},$cents',
               );
@@ -196,7 +161,7 @@ class TransactionCell extends StatelessWidget {
 
         // Right swipe (will finish): delete
         if (direction == DismissDirection.endToStart) {
-          sendRequest(
+          C2Request.sendRequest(
             'kTransactionDeleteRequest',
             '${transaction.id},$gCurrentUsername',
           );
@@ -213,6 +178,71 @@ class TransactionCell extends StatelessWidget {
         SizedBox(width: 120, height: 40, child: Text(transaction.note)),
         SizedBox(width: 80, height: 40, child: Text(transaction.amount)),
       ]),
+    );
+  }
+}
+
+class TransactionListSection extends StatelessWidget {
+  static final ValueNotifier<List<TransactionString>> transactionsNotifier =
+      ValueNotifier<List<TransactionString>>([
+        TransactionString.header(),
+        Transaction(
+          null,
+          "admin",
+          1772409600,
+          "Expense",
+          "Housing",
+          "Rent Payment",
+          "Monthly rent",
+          120000,
+        ).toTransString(),
+        Transaction(
+          null,
+          "admin",
+          1772496000,
+          "Expense",
+          "Food",
+          "Walmart",
+          "–",
+          8550,
+        ).toTransString(),
+        Transaction(
+          null,
+          "admin",
+          1772496000,
+          "Expense",
+          "Transport",
+          "Gas Station",
+          "–",
+          4500,
+        ).toTransString(),
+      ]);
+  final VoidCallback addTransaction;
+
+  const TransactionListSection({super.key, required this.addTransaction});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<TransactionString>>(
+      valueListenable: transactionsNotifier,
+      builder: (context, transactions, child) {
+        return VStack([
+          FloatingActionButton(
+            onPressed: addTransaction,
+            tooltip: 'Add Transaction',
+            child: const Icon(Icons.add),
+          ),
+          ...transactions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final transaction = entry.value;
+            return TransactionCell(
+              index: index,
+              transaction: transaction,
+              editable: index != 0,
+            );
+          }),
+        ]);
+      },
     );
   }
 }

@@ -66,10 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
 
-    gOnSignupResult = onSignupResult;
-    gOnLoginResult = onLoginResult;
+    C2NotificationProcessor.gOnSignupResult = onSignupResult;
+    C2NotificationProcessor.gOnLoginResult = onLoginResult;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      sendRequest(
+      C2Request.sendRequest(
         "kSetDatabasePath",
         path.join(await getDatabasesPath(), "shark_transactions.db"),
       );
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final hashed = hashPassword(password);
-    sendRequest('kUserLoginRequest', '$username,$hashed');
+    C2Request.sendRequest('kUserLoginRequest', '$username,$hashed');
   }
 
   void showSignUpDialog() {
@@ -160,7 +160,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Hash the password before sending
                 final hashed = hashPassword(password);
-                sendRequest('kUserSignupRequest', '$username,$hashed');
+                C2Request.sendRequest(
+                  'kUserSignupRequest',
+                  '$username,$hashed',
+                );
 
                 // Close dialog
                 Navigator.pop(context);
@@ -217,6 +220,15 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            FittedBox(
+              fit: BoxFit.contain, // otherwise the logo will be tiny
+              child: Image.asset(
+                'images/shark_budget.jpg',
+                width: 100,
+                height: 100,
+              ),
+            ),
+            const SizedBox(height: 50),
             TextField(
               controller: userController,
               decoration: const InputDecoration(
@@ -275,10 +287,10 @@ class MainContentState extends State<MainContent>
     super.initState();
     _controller = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      sendRequest("kCashFlowRequest", gCurrentUsername);
-      sendRequest("kExpenseReportRequest", gCurrentUsername);
-      sendRequest("kBalanceReportRequest", gCurrentUsername);
-      sendRequest("kTransactionListRequest", gCurrentUsername);
+      C2Request.sendRequest("kCashFlowRequest", gCurrentUsername);
+      C2Request.sendRequest("kExpenseReportRequest", gCurrentUsername);
+      C2Request.sendRequest("kBalanceReportRequest", gCurrentUsername);
+      C2Request.sendRequest("kTransactionListRequest", gCurrentUsername);
     });
   }
 
@@ -406,7 +418,7 @@ class MainContentState extends State<MainContent>
                             .toString();
                   final dollars = double.parse(amountController.text);
                   final cents = (dollars * 100).toStringAsFixed(0);
-                  sendRequest(
+                  C2Request.sendRequest(
                     "kNewTransactionRequest",
                     "$gCurrentUsername,$unixSeconds,${typeController.text},"
                         "${categoryController.text},${sourceController.text},"
@@ -493,27 +505,7 @@ class MainContentState extends State<MainContent>
           ),
 
           // Details
-          ValueListenableBuilder<List<TransactionString>>(
-            valueListenable: transactionsNotifier,
-            builder: (context, transactions, child) {
-              return VStack([
-                FloatingActionButton(
-                  onPressed: addTransaction,
-                  tooltip: 'Add Transaction',
-                  child: const Icon(Icons.add),
-                ),
-                ...transactions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final transaction = entry.value;
-                  return TransactionCell(
-                    index: index,
-                    transaction: transaction,
-                    editable: index == 0 ? false : true, // Header non-editable
-                  );
-                }),
-              ]);
-            },
-          ),
+          TransactionListSection(addTransaction: addTransaction),
 
           // Charts
           CashFlowLineChart(),

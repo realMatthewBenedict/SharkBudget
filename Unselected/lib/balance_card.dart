@@ -21,9 +21,10 @@ class Balance {
   final double netPercentDiff;
 }
 
-final ValueNotifier<Balance> balanceNotifier = ValueNotifier(Balance());
-
 class BalanceCard extends StatelessWidget {
+  static final ValueNotifier<Balance> balanceNotifier = ValueNotifier(
+    Balance(),
+  );
   const BalanceCard({super.key});
 
   @override
