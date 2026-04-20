@@ -27,9 +27,16 @@ The app saves data locally in:
 - macOS/Linux: `~/.sharkbudget/data.json`
 
 ### Run with Maven
-Please download IntelliJ IDEA from https://www.jetbrains.com/idea/download/
-and ensure you have installed OpenJDK 21,
-according to the instructions at https://www.jetbrains.com/help/idea/sdk.html
+Please download IntelliJ IDEA from https://www.jetbrains.com/idea/download/.
+
+Ensure you have a Java 21 JDK or newer and compatible JavaFX SDK installed.
+One way to do this is installing the Liberica 21 LTS JDK from https://bell-sw.com/pages/downloads/#jdk-21-lts
+
+For macOS users, installing the above JDK can be done automatically via Homebrew:
+```
+brew tap bell-sw/liberica
+brew install --cask liberica-jdk21-full
+```
 
 Open the project in IntelliJ IDEA and run:
 - Maven goal: `javafx:run`
