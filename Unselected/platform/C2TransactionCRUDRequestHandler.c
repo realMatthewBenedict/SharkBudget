@@ -78,8 +78,9 @@ void process_transaction_list_request(const char *databasePath,
   BackendController *b = createBackend(databasePath, username);
   TransactionVector r =
       c2dao_queryTrans(b->globalDB, b->username, timestamps[0], timestamps[12]);
-  fprintf(stderr, "Received %ld transactions for %s from %lld to %lld\n",
-          cvector_size(r), username, timestamps[0], timestamps[12]);
+  fprintf(stderr, "Received %ld transactions for %s from %s to %s\n",
+          cvector_size(r), username, intToString(timestamps[0]),
+          intToString(timestamps[12]));
   String serial = transactionVectorToString(r);
   send_notification("kTransactionListNotification", serial);
 }

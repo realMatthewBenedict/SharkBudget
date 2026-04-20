@@ -45,4 +45,11 @@ app.*.map.json
 /android/app/release
 
 # Platform binaries
+/android/app/src/main/jniLibs/arm64-v8a/libbackend.so
 /macos/Runner/Frameworks/libbackend.dylib
+/web/libbackend.js
+/web/libbackend.wasm
+
+# Dependency files
+/web/sqflite_sw.js
+/web/sqlite3.wasm

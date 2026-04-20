@@ -61,6 +61,7 @@ ExpenseReport *expenseBreakdown(BackendController *b, int64_t start_timestamp,
   TransactionVector v = c2dao_queryTrans(b->globalDB, b->username,
                                          start_timestamp, end_timestamp);
   ExpenseReport *result = malloc(sizeof(ExpenseReport));
+  *result = (ExpenseReport){0};
   for (int i = 0; i < cvector_size(v); ++i) {
     Transaction *t = v[i];
     if (strcmp(t->type, "Expense") != 0) {
@@ -87,6 +88,7 @@ BalanceReport *balanceBreakdown(BackendController *b, int64_t start_timestamp,
   TransactionVector v = c2dao_queryTrans(b->globalDB, b->username,
                                          start_timestamp, end_timestamp);
   BalanceReport *result = malloc(sizeof(BalanceReport));
+  *result = (BalanceReport){0};
   for (int i = 0; i < cvector_size(v); ++i) {
     Transaction *t = v[i];
     if (strcmp(t->type, "Expense") == 0) {

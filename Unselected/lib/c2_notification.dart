@@ -1,72 +1,13 @@
-import 'dart:ffi';
-import 'dart:io';
-import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 
 import 'package:c2/balance_card.dart';
 import 'package:c2/cash_flow_line_chart.dart';
 import 'package:c2/expenses_pie_chart.dart';
 import 'package:c2/transaction_cell.dart';
 
-typedef InitDartApiNative = IntPtr Function(Pointer<Void> data);
-typedef InitDartApiDart = int Function(Pointer<Void> data);
 typedef LoginCallback = void Function(bool success);
 
 class C2Notification {
-  // Global callback holder
-  static late final SendPort sendPort;
-  static bool _initialized = false;
-
-  // Initialize callback system
-  static void initNotificationCallback(DynamicLibrary lib) {
-    if (_initialized) {
-      return;
-    }
-
-    final initDartApiDL = lib
-        .lookupFunction<InitDartApiNative, InitDartApiDart>('InitDartApiDL');
-
-    final result = initDartApiDL(NativeApi.initializeApiDLData);
-    if (result != 0) {
-      throw Exception('Dart API initialization failed');
-    }
-    _initialized = true;
-
-    // Create isolate port for C->Dart communication
-    final receivePort = ReceivePort();
-    sendPort = receivePort.sendPort;
-
-    // Register callback with C (pass function pointer + isolate port ID)
-    final registerCallback = lib
-        .lookupFunction<Void Function(Int64), void Function(int)>(
-          'register_notification_port',
-        );
-
-    registerCallback(sendPort.nativePort);
-
-    // Listen for messages from C
-    receivePort.listen(
-      (message) {
-        if (message is List && message.length == 2) {
-          final notificationName = message[0] as String;
-          final notificationData = message[1] as String;
-          stderr.writeln(
-            "✅ Received message: $notificationName with data: '$notificationData'",
-          );
-          C2NotificationProcessor.process(notificationName, notificationData);
-        } else {
-          stderr.writeln(
-            "📨 Unknown message: $message (${message.runtimeType})",
-          );
-        }
-      },
-      onError: (error) {
-        stderr.writeln("❌ Message receipt error: $error");
-      },
-    );
-  }
-}
-
-class C2NotificationProcessor {
   // Populated by _LoginScreenState
   static late LoginCallback gOnSignupResult;
   static late LoginCallback gOnLoginResult;
@@ -85,10 +26,12 @@ class C2NotificationProcessor {
     } else if (notificationName == "kTransactionListNotification") {
       processTransactionListNotification(parseTransactions(notificationData));
     } else {
-      stderr.write("Unrecognized notification: $notificationName\n");
+      debugPrint("Unrecognized notification: $notificationName");
       return;
     }
-    stderr.write("Processed notification: $notificationName\n");
+    debugPrint(
+      "Processed notification '$notificationName' with data '$notificationData'",
+    );
   }
 
   static void processUserSignupNotification() {

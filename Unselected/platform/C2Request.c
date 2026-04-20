@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "C2CashFlowRequestHandler.h"
@@ -8,6 +9,13 @@
 #include "C2UserLoginController.h"
 
 static char *gDatabasePath = NULL;
+
+#ifdef DART_WEB
+void send_request(char *name, char *data) {
+  Message m = {.name = name, .data = data};
+  process_request(m);
+}
+#endif
 
 void process_request(Message request) {
   char *kRequestName = request.name;

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "DatabaseController.h"
 #include "third_party/cstring.h"
 

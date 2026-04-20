@@ -1,11 +1,13 @@
+#pragma once
+
 #include <ctype.h>
-#include <sqlite3.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "third_party/cvector.h"
+#include "third_party/sqlite3.h"
 
 typedef struct {
   int64_t id;           // INTEGER PRIMARY KEY

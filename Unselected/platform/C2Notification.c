@@ -1,10 +1,17 @@
-#include <dart_api_dl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "C2Notification.h"
+
+#ifdef DART_WEB
+extern void NotifyDartImpl(const char *name, const char *data);
+void send_notification(char *kNotificationName, char *message) {
+  NotifyDartImpl(kNotificationName, message);
+}
+#else
+#include <dart_api_dl.h>
 
 DART_EXPORT intptr_t InitDartApiDL(void *data) {
   intptr_t result = Dart_InitializeApiDL(data);
@@ -49,3 +56,4 @@ void send_notification(char *kNotificationName, char *message) {
   }
   fprintf(stderr, "Sent notification: %s\n", kNotificationName);
 }
+#endif

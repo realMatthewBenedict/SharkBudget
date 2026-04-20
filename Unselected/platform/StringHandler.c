@@ -1,5 +1,6 @@
 #include "StringHandler.h"
 #include <ctype.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +17,7 @@ char *intToString(int64_t num) {
   char *str = malloc(32 * sizeof(char));
   if (!str)
     abort();
-  sprintf(str, "%lld", num);
+  sprintf(str, "%" PRId64, num);
   str = realloc(str, strlen(str) + 1);
   return str;
 }

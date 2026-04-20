@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart' as db;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' as db_ffi;
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart' as db_web;
 import 'package:velocity_x/velocity_x.dart';
 
 import 'package:c2/app_colors.dart';
@@ -19,6 +21,7 @@ void main() {
 }
 
 late String gCurrentUsername;
+late C2Request gRequestManager;
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -59,6 +62,10 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
 
   Future<String> getDatabasesPath() async {
+    final basename = "shark_transactions.db";
+    if (kIsWeb) {
+      return basename;
+    }
     return db.getDatabasesPath();
   }
 
@@ -66,13 +73,20 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
 
-    C2NotificationProcessor.gOnSignupResult = onSignupResult;
-    C2NotificationProcessor.gOnLoginResult = onLoginResult;
+    gRequestManager = C2Request();
+    C2Notification.gOnSignupResult = onSignupResult;
+    C2Notification.gOnLoginResult = onLoginResult;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      C2Request.sendRequest(
-        "kSetDatabasePath",
-        path.join(await getDatabasesPath(), "shark_transactions.db"),
-      );
+      // Some platforms require initialization before using sqflite3 methods
+      final platform = defaultTargetPlatform;
+      if (kIsWeb) {
+        db.databaseFactory = db_web.databaseFactoryFfiWeb;
+      } else if (platform != TargetPlatform.android &&
+          platform != TargetPlatform.iOS) {
+        db.databaseFactory = db_ffi.databaseFactoryFfi;
+      }
+
+      gRequestManager.sendRequest("kSetDatabasePath", await getDatabasesPath());
     });
   }
 
@@ -104,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     final hashed = hashPassword(password);
-    C2Request.sendRequest('kUserLoginRequest', '$username,$hashed');
+    gRequestManager.sendRequest('kUserLoginRequest', '$username,$hashed');
   }
 
   void showSignUpDialog() {
@@ -160,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Hash the password before sending
                 final hashed = hashPassword(password);
-                C2Request.sendRequest(
+                gRequestManager.sendRequest(
                   'kUserSignupRequest',
                   '$username,$hashed',
                 );
@@ -287,10 +301,10 @@ class MainContentState extends State<MainContent>
     super.initState();
     _controller = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      C2Request.sendRequest("kCashFlowRequest", gCurrentUsername);
-      C2Request.sendRequest("kExpenseReportRequest", gCurrentUsername);
-      C2Request.sendRequest("kBalanceReportRequest", gCurrentUsername);
-      C2Request.sendRequest("kTransactionListRequest", gCurrentUsername);
+      gRequestManager.sendRequest("kCashFlowRequest", gCurrentUsername);
+      gRequestManager.sendRequest("kExpenseReportRequest", gCurrentUsername);
+      gRequestManager.sendRequest("kBalanceReportRequest", gCurrentUsername);
+      gRequestManager.sendRequest("kTransactionListRequest", gCurrentUsername);
     });
   }
 
@@ -418,7 +432,7 @@ class MainContentState extends State<MainContent>
                             .toString();
                   final dollars = double.parse(amountController.text);
                   final cents = (dollars * 100).toStringAsFixed(0);
-                  C2Request.sendRequest(
+                  gRequestManager.sendRequest(
                     "kNewTransactionRequest",
                     "$gCurrentUsername,$unixSeconds,${typeController.text},"
                         "${categoryController.text},${sourceController.text},"

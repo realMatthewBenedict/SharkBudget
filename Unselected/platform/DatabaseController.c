@@ -1,13 +1,14 @@
 #include "DatabaseController.h"
+#include "StringHandler.h"
 
 // Transaction
 
 void log_transaction(const Transaction *t, const char *action) {
   fprintf(stderr,
-          "%s with username %s at unix time %lld, type %s, "
-          "category %s, source %s, note %s, amount %lld cents\n",
-          action, t->username, t->unix_time, t->type, t->category, t->source,
-          t->note, t->amount_cents);
+          "%s with username %s at unix time %s, type %s, "
+          "category %s, source %s, note %s, amount %s cents\n",
+          action, t->username, intToString(t->unix_time), t->type, t->category,
+          t->source, t->note, intToString(t->amount_cents));
 }
 
 // Private methods
@@ -229,7 +230,7 @@ bool c2dao_queryUser(sqlite3 *db, const char *username,
 }
 
 TransactionVector c2dao_queryTrans(sqlite3 *db, const char *username,
-                                   long long unix_start, long long unix_end) {
+                                   int64_t unix_start, int64_t unix_end) {
   sqlite3_stmt *stmt;
   const char *sql = "SELECT * FROM transactions "
                     "WHERE username = ? AND unix_time >= ? AND unix_time < ? "

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
 
 import 'package:c2/app_colors.dart';
-import 'package:c2/c2_request.dart';
 import 'package:c2/main.dart';
 
 class TransactionString {
@@ -111,7 +110,7 @@ class TransactionCell extends StatelessWidget {
               final dollars = double.parse(amountController.text);
               final cents = (dollars * 100).toStringAsFixed(0);
 
-              C2Request.sendRequest(
+              gRequestManager.sendRequest(
                 'kTransactionEditRequest',
                 '${transaction.id},$gCurrentUsername,${notesController.text},$cents',
               );
@@ -161,7 +160,7 @@ class TransactionCell extends StatelessWidget {
 
         // Right swipe (will finish): delete
         if (direction == DismissDirection.endToStart) {
-          C2Request.sendRequest(
+          gRequestManager.sendRequest(
             'kTransactionDeleteRequest',
             '${transaction.id},$gCurrentUsername',
           );

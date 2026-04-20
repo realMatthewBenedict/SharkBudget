@@ -1,4 +1,6 @@
-#include <sqlite3.h>
+#pragma once
+
+#include "DatabaseController.h"
 #include <stdlib.h>
 
 typedef struct {
