@@ -45,19 +45,35 @@ Or use the Maven tool window and run the `javafx:run` goal.
 
 ## C2 Architecture
 
-The folder `Unselected/` contains the implementation using the C2 architecture.
+The folder `Unselected/` contains the implementation using the C2 architecture, built with Flutter for the frontend, C for the backend, and SQLite libraries for database operations.
 
-Versioning information:
+Versioning information on my system (obtained via `flutter --version`):
 ```
 Flutter 3.38.6 • channel stable • https://github.com/flutter/flutter.git
-Framework • revision 8b87286849 (3 months ago) • 2026-01-08 10:49:17 -0800
+Framework • revision 8b87286849 (4 months ago) • 2026-01-08 10:49:17 -0800
 Engine • hash 6f3039bf7c3cb5306513c75092822d4d94716003 (revision 78fc3012e4) (3 months ago) • 2026-01-07 18:42:12.000Z
 Tools • Dart 3.10.7 • DevTools 2.51.1
 ```
 
-Please follow the instructions to set up Flutter at https://docs.flutter.dev/install/with-vs-code
+Please follow the instructions to set up Flutter at https://docs.flutter.dev/install/with-vs-code (ensuring to restart VS Code after downloading the Flutter SDK).
 
-TODO: Compilation instructions will be added shortly.
+You will also need the clang C compiler:
+* Obtain `clang` on macOS with the Xcode command line tools (installed with `xcode-select --install`)
+* Obtain `clang-cl` on Windows from MSVC in the installer at https://visualstudio.microsoft.com/visual-cpp-build-tools/ on Windows.
+
+In the Unselected directory, run `dart pub get` and then `dart run sqflite_common_ffi_web:setup` to get dependencies.
+
+The platform you are compiling for may need additional dependencies. For instance:
+
+* The web implementation requires Emscripten from https://emscripten.org/docs/getting_started/downloads.html
+* The native macOS implementation requires Xcode from https://developer.apple.com/xcode/
+* The native Android implementation requires the Android SDK found in Android Studio from https://developer.android.com/studio
+
+**Warning:** Compiling the native macOS platform on macOS is recommended. The functionality of other builds is not guaranteed.
+
+To do this, run `platform/compile/macos.sh` then `flutter run -d macos`
+
+Steps for other platforms are similar.
 
 ## Architectural Detail Comparison
 
