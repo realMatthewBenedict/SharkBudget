@@ -58,12 +58,9 @@ class C2Request extends request_base.C2RequestAbstract {
       );
     }
     if (Platform.isWindows) {
-      libraryPath = path.join(
-        Directory.current.path,
-        'platform',
-        'Debug',
-        'backend.dll',
-      );
+      final exeDir = Directory(Platform.resolvedExecutable).parent.path;
+      Directory(exeDir).listSync().forEach((f) => print(f.path));
+      libraryPath = 'libbackend.dll';
     }
     return DynamicLibrary.open(libraryPath);
   }

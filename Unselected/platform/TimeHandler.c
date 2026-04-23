@@ -1,5 +1,6 @@
 #include "TimeHandler.h"
 #include <stdlib.h>
+#pragma warning(disable : 4996)
 
 static time_t current_month_start(void) {
   time_t now = time(NULL);

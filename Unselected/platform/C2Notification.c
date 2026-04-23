@@ -12,10 +12,11 @@ void send_notification(char *kNotificationName, char *message) {
 }
 #else
 #include <dart_api_dl.h>
+#include <inttypes.h>
 
 DART_EXPORT intptr_t InitDartApiDL(void *data) {
   intptr_t result = Dart_InitializeApiDL(data);
-  fprintf(stderr, "Dart_InitializeApiDL result: %ld\n", result);
+  fprintf(stderr, "Dart_InitializeApiDL result: %" PRIdPTR "\n", result);
   return result;
 }
 

@@ -14,6 +14,7 @@ add_executable(${BINARY_NAME} WIN32
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
   "runner.exe.manifest"
+  "libbackend.dll"
 )
 
 # Apply the standard set of build settings. This can be removed for applications
@@ -38,3 +39,9 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# Try to copy the backend DLL to the run directory
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND cmd /c copy /Y "${CMAKE_SOURCE_DIR}\\libbackend.dll" "${CMAKE_CURRENT_BINARY_DIR}"
+  COMMENT "Copying libbackend.dll"
+)
