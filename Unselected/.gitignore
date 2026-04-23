@@ -50,6 +50,3 @@ app.*.map.json
 /web/libbackend.js
 /web/libbackend.wasm
 
-# Dependency files
-/web/sqflite_sw.js
-/web/sqlite3.wasm
