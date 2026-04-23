@@ -32,6 +32,24 @@ Please download IntelliJ IDEA from https://www.jetbrains.com/idea/download/.
 Ensure you have a Java 21 JDK or newer and compatible JavaFX SDK installed.
 One way to do this is installing the Liberica 21 LTS JDK from https://bell-sw.com/pages/downloads/#jdk-21-lts
 
+Detailed Instruction on how to run the code:
+
+1,download the zip file and decompress
+
+2,open the intelij idea and open the file
+
+3,This is a Maven project so there maybe importing dependency
+
+4,Make sure you have JDK21 
+
+5,Open the Maven panel and expand the file:
+Plugins
+  -> javafx
+      -> javafx:run
+
+6,Double click the javaFX and run the program.
+
+
 For macOS users, installing the above JDK can be done automatically via Homebrew:
 ```
 brew tap bell-sw/liberica
