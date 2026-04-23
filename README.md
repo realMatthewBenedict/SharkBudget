@@ -95,5 +95,15 @@ Steps for other platforms are similar.
 
 ## Architectural Detail Comparison
 
-TODO: This information will be added shortly.
+## Architecture Comparison: C2 vs. Layered
+
+For the **Shark Budget** project, both **C2** and **Layered Architecture** were considered as candidate architectural styles. Each style has its own strengths, but they support the system in different ways. Shark Budget is a personal budget tracking system whose main workflow is relatively direct: the user enters transaction data, the system processes it, calculates summaries, and stores or retrieves records for display. Because of this workflow, the architecture needs to be clear, maintainable, and easy to implement.
+
+The **C2 architectural style** provides strong separation between components through message-based communication. This makes it a good choice for systems that require loose coupling, independent component interaction, or more distributed and event-driven behavior. It can also support cases where different parts of the system are implemented in different languages or platforms. However, for Shark Budget, C2 introduces additional complexity that is not strictly necessary. Components must communicate through messages, which adds design overhead, increases implementation effort, and may reduce efficiency because of serialization and deserialization of data. This extra flexibility is valuable in larger or more distributed systems, but it is less beneficial for a standalone budget tracker.
+
+The **Layered architectural style** is more suitable for this project because it matches the system structure naturally. The presentation layer handles user interaction and screen display, the business logic layer processes transactions and calculates summaries, and the data access layer manages persistence. This separation of responsibilities makes the system easier to understand, develop, test, and maintain. It also supports future extension, since new features can usually be added by modifying one layer without heavily affecting the others.
+
+In summary, **C2 is more flexible but also more complex**, while **Layered Architecture is simpler and more practical** for Shark Budget. Since this project is a small-to-medium desktop budget application rather than a highly distributed system, the layered approach provides the best balance of simplicity, modularity, maintainability, and development effort. 
+
+
 
