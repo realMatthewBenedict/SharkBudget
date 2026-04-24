@@ -44,6 +44,8 @@ Detailed Instruction on how to run the code:
           -> javafx:run
 6. Double click the javaFX and run the program.
 
+notes: the chart is a redundant function becuese the dashboard already show the chart 
+
 For macOS users, installing the above JDK can be done automatically via Homebrew:
 ```
 brew tap bell-sw/liberica
