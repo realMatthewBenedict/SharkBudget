@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:velocity_x/velocity_x.dart';
 
 import 'package:c2/app_colors.dart';
@@ -87,6 +88,9 @@ class TransactionCell extends StatelessWidget {
             TextField(
               controller: notesController,
               decoration: const InputDecoration(labelText: 'Note'),
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r',')),
+              ],
             ),
             TextField(
               controller: amountController,
@@ -97,6 +101,9 @@ class TransactionCell extends StatelessWidget {
                 labelText: 'Amount (e.g., 45.00)',
                 prefixText: '\$',
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r',')),
+              ],
             ),
           ],
         ),

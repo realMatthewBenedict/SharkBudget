@@ -34,21 +34,15 @@ One way to do this is installing the Liberica 21 LTS JDK from https://bell-sw.co
 
 Detailed Instruction on how to run the code:
 
-1,download the zip file and decompress
-
-2,open the intelij idea and open the file
-
-3,This is a Maven project so there maybe importing dependency
-
-4,Make sure you have JDK21 
-
-5,Open the Maven panel and expand the file:
-Plugins
-  -> javafx
-      -> javafx:run
-
-6,Double click the javaFX and run the program.
-
+1. Download the zip file and decompress
+2. Open the intelij idea and open the file
+3. This is a Maven project, so ensure to install dependencies
+4. Make sure you selected the above JDK 21 and JavaFX SDK 
+5. Open the Maven panel and expand the file:
+    Plugins
+      -> javafx
+          -> javafx:run
+6. Double click the javaFX and run the program.
 
 For macOS users, installing the above JDK can be done automatically via Homebrew:
 ```
@@ -73,6 +67,8 @@ Engine • hash 6f3039bf7c3cb5306513c75092822d4d94716003 (revision 78fc3012e4) (
 Tools • Dart 3.10.7 • DevTools 2.51.1
 ```
 
+> ⚠️ **Warning:** For evaluation purposes, please compile for the native macOS platform on macOS. Due to a dependency issue, you should perform this in a directory with an absolute path containing no spaces. The functionality of other builds is not guaranteed.
+
 Please follow the instructions to set up Flutter at https://docs.flutter.dev/install/with-vs-code (ensuring to restart VS Code after downloading the Flutter SDK).
 
 You will also need the clang C compiler:
@@ -87,8 +83,6 @@ The platform you are compiling for may need additional dependencies. For instanc
 * The native macOS implementation requires Xcode from https://developer.apple.com/xcode/
 * The native Android implementation requires the Android SDK found in Android Studio from https://developer.android.com/studio
 
-**Warning:** Compiling the native macOS platform on macOS is recommended. The functionality of other builds is not guaranteed.
-
 To do this, run `platform/compile/macos.sh` then `flutter run -d macos`
 
 Steps for other platforms are similar.
@@ -97,13 +91,28 @@ Steps for other platforms are similar.
 
 ## Architecture Comparison: C2 vs. Layered
 
-For the **Shark Budget** project, both **C2** and **Layered Architecture** were considered as candidate architectural styles. Each style has its own strengths, but they support the system in different ways. Shark Budget is a personal budget tracking system whose main workflow is relatively direct: the user enters transaction data, the system processes it, calculates summaries, and stores or retrieves records for display. Because of this workflow, the architecture needs to be clear, maintainable, and easy to implement.
+> ⚠️ **Note:** In our project, we implemented the layered architecture in a homogenous way, with all layers being implemented in Java, while our C2 implementation was heterogenous, with a frontend implemented in a different programming language than the backend (specifically Dart and C, respectively, although other languages may be used internally by Flutter). This creates an architectural comparison on an uneven footing, since we are comparing a heterogenous implementation and homogenous implementation at the same time as two different architecture styles.
+>
+> Despite the constraints, including time and the fact our group only had two members, it would have likely been a more meaningful project with better resulting analysis to use the same set of languages for both implementations, in order to solely examine the impact of architecture style, rather than also having the confounding factor of heterogeneity. For instance, while we could argue that layered architectural style is better because it only needed 13 classes versus 37 on the class diagram, while still achieving approximately the same functionality, there is some nuance with a different choice of persistent data store (JSON vs. SQLite), and of course the necessity of message passing between heterogeneous layers, which also would have been necessary if the layered architecture had been heterogeneous.
+>
+> In addition, C of course does not have classes, with the closest approximation of structs usually not containing methods. As a result, the class diagram could not be implemented literally on the C side. As a result, in the unselected implementation, to accommodate more platforms, classes particularly pertaining to C2Request's Dart implementation were adjusted since the presentation.
 
-The **C2 architectural style** provides strong separation between components through message-based communication. This makes it a good choice for systems that require loose coupling, independent component interaction, or more distributed and event-driven behavior. It can also support cases where different parts of the system are implemented in different languages or platforms. However, for Shark Budget, C2 introduces additional complexity that is not strictly necessary. Components must communicate through messages, which adds design overhead, increases implementation effort, and may reduce efficiency because of serialization and deserialization of data. This extra flexibility is valuable in larger or more distributed systems, but it is less beneficial for a standalone budget tracker.
+For the **Shark Budget** project, both **C2** and **Layered Architecture** were considered as candidate architectural styles.
+Each style has its own strengths, but they support the system in different ways.
+Shark Budget is a personal budget tracking system whose main workflow is relatively direct:
+the user enters transaction data, the system processes it, calculates summaries, and stores or retrieves records for display.
+Because of this workflow, the architecture needs to be clear, maintainable, and easy to implement.
+
+The **C2 architectural style**, as implemented, provides strong separation between components through message-based communication.
+This makes it a good choice for systems that require loose coupling, independent component interaction, or more distributed and event-driven behavior.
+This also makes it well-suited to support cases where different parts of the system are implemented in different languages or platforms.
+However, for Shark Budget, C2 introduces additional complexity that is not strictly necessary.
+In our case, we needed to pass communication through message-based request and notification handlers,
+which adds design overhead, increases implementation effort, and may reduce efficiency because of serialization and deserialization of data.
+This does provide decent support for an observer pattern if multiple components were to respond to the same notification, but this is not well taken advantage of in this implementation.
+This extra flexibility is valuable in larger or more distributed systems, or in deployment as a thin client at scale, but it is less beneficial for a standalone budget tracker.
 
 The **Layered architectural style** is more suitable for this project because it matches the system structure naturally. The presentation layer handles user interaction and screen display, the business logic layer processes transactions and calculates summaries, and the data access layer manages persistence. This separation of responsibilities makes the system easier to understand, develop, test, and maintain. It also supports future extension, since new features can usually be added by modifying one layer without heavily affecting the others.
 
 In summary, **C2 is more flexible but also more complex**, while **Layered Architecture is simpler and more practical** for Shark Budget. Since this project is a small-to-medium desktop budget application rather than a highly distributed system, the layered approach provides the best balance of simplicity, modularity, maintainability, and development effort. 
-
-
 

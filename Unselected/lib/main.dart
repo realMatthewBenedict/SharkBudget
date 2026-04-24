@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart' as db;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' as db_ffi;
@@ -141,6 +142,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Username',
                     border: OutlineInputBorder(),
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r',')),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -150,6 +154,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Password',
                     border: OutlineInputBorder(),
                   ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r',')),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 if (error != null)
@@ -249,6 +256,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 labelText: 'Username',
                 border: OutlineInputBorder(),
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r',')),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
@@ -258,6 +268,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 labelText: 'Password',
                 border: OutlineInputBorder(),
               ),
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r',')),
+              ],
             ),
             const SizedBox(height: 16),
             if (_error != null)
@@ -375,6 +388,9 @@ class MainContentState extends State<MainContent>
                       labelText: 'Type (e.g., Expense)',
                       border: OutlineInputBorder(),
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r',')),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   // Category
@@ -384,6 +400,9 @@ class MainContentState extends State<MainContent>
                       labelText: 'Category (e.g., Food)',
                       border: OutlineInputBorder(),
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r',')),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   // Source/Merchant
@@ -393,6 +412,9 @@ class MainContentState extends State<MainContent>
                       labelText: 'Source/Merchant',
                       border: OutlineInputBorder(),
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r',')),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   // Note
@@ -402,6 +424,9 @@ class MainContentState extends State<MainContent>
                       labelText: 'Note',
                       border: OutlineInputBorder(),
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r',')),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   // Amount
@@ -415,6 +440,9 @@ class MainContentState extends State<MainContent>
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r',')),
+                    ],
                   ),
                 ],
               ),
